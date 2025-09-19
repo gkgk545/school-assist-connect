@@ -199,7 +199,7 @@ export const EmergencyNetworkPage = () => {
     }
   }
   
-  const renderOrganizationNode = (node: OrganizationNode) => (
+  const renderOrganizationNode = (node: OrganizationNode): JSX.Element => (
     <li key={node.id}>
       <Card className={`node-card shadow-md border-2 min-w-[200px] ${getNodeBgColor(node.staff.position)}`}>
         <CardContent className="p-3 text-center">
@@ -271,7 +271,6 @@ export const EmergencyNetworkPage = () => {
                     <>
                         <div className="mb-6 print:hidden">
                             <div className="flex flex-wrap gap-3 justify-between items-center">
-                                {/* ================== 여기부터 ================== */}
                                 <div className="flex flex-wrap gap-3">
                                     <Button onClick={handleSaveLayout} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">
                                         <Save className="h-4 w-4 mr-2" />
@@ -290,7 +289,6 @@ export const EmergencyNetworkPage = () => {
                                         {copySuccess ? '복사됨!' : '링크 공유'}
                                     </Button>
                                 </div>
-                                {/* ================== 여기까지 ================== */}
                                 <Controls
                                     zoomIn={zoomIn}
                                     zoomOut={zoomOut}
@@ -302,7 +300,7 @@ export const EmergencyNetworkPage = () => {
                             wrapperStyle={{ width: '100%', height: 'calc(100vh - 250px)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
                             contentStyle={{ width: '100%', height: '100%' }}
                         >
-                            <div ref={orgChartRef} className="bg-white rounded-lg p-6 h-full w-full">
+                            <div ref={orgChartRef} className="bg-white rounded-lg p-6 h-full w-full overflow-auto">
                                 <div className="text-center mb-8">
                                     <h2 className="text-3xl font-bold text-education-primary mb-2">
                                         {user?.user_metadata?.school_name || '학교'} 비상연락망
@@ -313,10 +311,10 @@ export const EmergencyNetworkPage = () => {
                                 </div>
 
                                 {organizationTree.length > 0 ? (
-                                    <div className="flex justify-center items-center h-full">
-                                      <ul className="org-chart">
-                                          {organizationTree.map((node) => renderOrganizationNode(node))}
-                                      </ul>
+                                    <div className="flex justify-center items-start min-h-full py-8">
+                                        <ul className="org-chart">
+                                            {organizationTree.map((node) => renderOrganizationNode(node))}
+                                        </ul>
                                     </div>
                                 ) : (
                                     <div className="text-center py-12">
@@ -339,13 +337,10 @@ export const EmergencyNetworkPage = () => {
             </TransformWrapper>
           </div>
           <div className="lg:w-80 print:hidden">
-            {/* ... Right sidebar JSX remains unchanged ... */}
+            {/* Right sidebar content remains unchanged */}
           </div>
         </div>
       </div>
-      <style dangerouslySetInnerHTML={{ __html: `
-          @media print { /* ... Print styles remain unchanged ... */ }
-      `}} />
     </div>
   )
 }
