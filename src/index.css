@@ -120,160 +120,138 @@ All colors MUST be HSL.
   }
 }
 
-/* 조직도 스타일 */
+/* 조직도 기본 구조 */
 .org-chart {
-  display: inline-block;
+  display: flex;
+  justify-content: center;
+  font-family: inherit;
+}
+
+.org-chart,
+.org-chart ul,
+.org-chart li {
   position: relative;
 }
 
 .org-chart ul {
-  padding-top: 40px;
+  padding-top: 20px;
   position: relative;
+  transition: all 0.5s;
   display: flex;
   justify-content: center;
-  margin: 0;
-  padding-left: 0;
 }
 
 .org-chart li {
+  float: left;
+  text-align: center;
   list-style-type: none;
   position: relative;
-  padding: 0 20px;
-  display: inline-block;
-  vertical-align: top;
+  padding: 20px 5px 0 5px;
+  transition: all 0.5s;
 }
 
-/* 노드 카드 스타일 */
-.org-chart .node-card {
-  position: relative;
-  display: inline-block;
-  z-index: 10;
-  background: white;
-}
-
-/* 부모 노드에서 아래로 내려가는 선 */
-.org-chart li.has-children > .node-card::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  border-left: 2px solid #cbd5e1;
-  height: 40px;
-  z-index: -1;
-}
-
-/* 자식 노드들 위의 수평선 */
-.org-chart li.has-children > ul::before {
+/* 부모와 자식을 연결하는 수직선 */
+.org-chart li::before {
   content: '';
   position: absolute;
   top: 0;
   left: 50%;
-  border-top: 2px solid #cbd5e1;
+  border-left: 2px solid #ccc;
   width: 0;
-  height: 0;
-  transform: translateX(-50%);
-  z-index: -1;
+  height: 20px;
+  z-index: 1;
 }
 
-/* 자식 노드들의 수평 연결선 */
-.org-chart ul ul::before {
+/* 형제들을 연결하는 수평선 */
+.org-chart li::after {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
-  border-top: 2px solid #cbd5e1;
+  border-top: 2px solid #ccc;
   width: 100%;
   height: 0;
-  z-index: -1;
+  z-index: 1;
 }
 
-/* 각 자식 노드 위로 올라오는 선 */
-.org-chart li li::before {
+/* 부모에서 자식 그룹으로 내려오는 수직선 */
+.org-chart ul::before {
   content: '';
   position: absolute;
-  top: 0;
+  top: -20px;
   left: 50%;
-  border-left: 2px solid #cbd5e1;
+  border-left: 2px solid #ccc;
   width: 0;
+  height: 20px;
+  z-index: 1;
+}
+
+/* 자식을 가진 노드 아래로 추가 수직선 */
+.org-chart li ul {
+  margin-top: 20px;
+}
+
+.org-chart li ul::before {
+  top: -40px;
   height: 40px;
-  z-index: -1;
 }
 
-/* 첫 번째 자식의 왼쪽 수평선 제거 */
-.org-chart li li:first-child::after {
-  content: '';
-  position: absolute;
-  top: 0;
+/* 첫 번째 자식의 수평선은 가운데부터 시작 */
+.org-chart li:first-child::after {
+  border: 0 none;
+  border-top: 2px solid #ccc;
+  border-radius: 0;
   left: 50%;
-  border-top: 2px solid #cbd5e1;
   width: 50%;
-  height: 0;
-  z-index: -1;
 }
 
-/* 마지막 자식의 오른쪽 수평선 제거 */
-.org-chart li li:last-child::after {
-  content: '';
-  position: absolute;
-  top: 0;
+/* 마지막 자식의 수평선은 가운데까지만 */
+.org-chart li:last-child::after {
+  border: 0 none;
+  border-top: 2px solid #ccc;
+  border-radius: 0;
   right: 50%;
-  border-top: 2px solid #cbd5e1;
   width: 50%;
-  height: 0;
-  z-index: -1;
 }
 
-/* 중간 자식들의 전체 수평선 */
-.org-chart li li:not(:first-child):not(:last-child)::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  border-top: 2px solid #cbd5e1;
-  width: 100%;
-  height: 0;
-  z-index: -1;
-}
-
-/* 외동 자식인 경우 수평선 제거 */
-.org-chart li li:only-child::after,
-.org-chart li li:only-child::before {
+/* 외동 자식은 수평선 없음 */
+.org-chart li:only-child::after {
   display: none;
 }
 
-.org-chart li.has-children.single-child > .node-card::after {
-  border-left: 2px solid #cbd5e1;
+/* 외동 자식의 수직선도 제거 */
+.org-chart li:only-child::before {
+  display: none;
 }
 
-/* 루트 노드는 위 연결선 없음 */
+/* 루트 노드는 연결선 없음 */
 .org-chart > li::before,
 .org-chart > li::after {
-  border: none;
   display: none;
 }
 
-/* 호버 효과 */
-.org-chart .node-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
+/* 첫 번째와 마지막이 같은 경우 (형제가 하나일 때) */
+.org-chart li:first-child:last-child::before {
+  display: none;
 }
 
-/* 인쇄 시 스타일 */
+.org-chart li:first-child:last-child::after {
+  display: none;
+}
+
+/* 노드 카드 스타일링 */
+.org-chart .node-card {
+  display: inline-block;
+  margin: 0 5px;
+  position: relative;
+  z-index: 2;
+}
+
+/* 인쇄시 연결선 색상 조정 */
 @media print {
   .org-chart li::before,
   .org-chart li::after,
-  .org-chart li.has-children > .node-card::after,
-  .org-chart li.has-children > ul::before,
-  .org-chart ul ul::before,
-  .org-chart li li::before,
-  .org-chart li li:first-child::after,
-  .org-chart li li:last-child::after,
-  .org-chart li li:not(:first-child):not(:last-child)::after {
-    border-color: #475569 !important;
-  }
-  
-  .print\:hidden {
-    display: none !important;
+  .org-chart li ul::before {
+    border-color: #000 !important;
   }
 }
