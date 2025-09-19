@@ -37,7 +37,22 @@ export const AuthPage = () => {
         password: loginForm.password,
       })
 
-      if (error) throw error
+      if (error) {
+        if (error.message === 'Email not confirmed') {
+          toast({
+            title: "이메일 인증 필요",
+            description: "회원가입 시 보낸 이메일의 인증 링크를 클릭해주세요.",
+            variant: "destructive",
+          })
+        } else {
+          toast({
+            title: "로그인 실패",
+            description: error.message,
+            variant: "destructive",
+          })
+        }
+        return
+      }
 
       toast({
         title: "로그인 성공",
