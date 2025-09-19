@@ -23,6 +23,7 @@ import {
 import html2canvas from 'html2canvas'
 import { TransformWrapper, TransformComponent, useControls } from "react-zoom-pan-pinch";
 
+
 interface StaffMember {
   id: string
   name: string
@@ -69,6 +70,7 @@ const Controls = ({ zoomIn, zoomOut, resetTransform }: { zoomIn: () => void, zoo
         </div>
     );
 };
+
 
 export const EmergencyNetworkPage = () => {
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
@@ -181,6 +183,97 @@ export const EmergencyNetworkPage = () => {
     setOrganizationTree(tree);
   };
 
+  const handleSaveLayout = async () => {
+    setIsLoading(true)
+    try {
+      const layoutData = {
+        tree: organizationTree,
+        lastUpdated: new Date().toISOString()
+      }
+
+      const { error } = await supabase
+        .from('organization_layouts')
+        .upsert({
+          school_id: user.id,
+          layout_data: layoutData as any
+        })
+
+      if (error) throw error
+
+      toast({
+        title: "레이아웃 저장됨",
+        description: "조직도 레이아웃이 저장되었습니다.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "저장 실패",
+        description: error.message,
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handlePrint = () => {
+    window.print()
+  }
+
+  const handleDownloadImage = async () => {
+    if (!orgChartRef.current) return
+
+    try {
+      const canvas = await html2canvas(orgChartRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2
+      })
+      
+      const link = document.createElement('a')
+      link.download = `비상연락망_${new Date().toLocaleDateString()}.png`
+      link.href = canvas.toDataURL()
+      link.click()
+
+      toast({
+        title: "이미지 다운로드",
+        description: "비상연락망 이미지가 다운로드되었습니다.",
+      })
+    } catch (error) {
+      toast({
+        title: "다운로드 실패",
+        description: "이미지 생성에 실패했습니다.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleGenerateShareLink = async () => {
+    try {
+      const shareId = Math.random().toString(36).substr(2, 9)
+      const url = `${window.location.origin}/share/${shareId}`
+      setShareUrl(url)
+
+      await navigator.clipboard.writeText(url)
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 2000)
+
+      toast({
+        title: "공유 링크 생성됨",
+        description: "링크가 클립보드에 복사되었습니다.",
+      })
+    } catch (error) {
+      toast({
+        title: "링크 생성 실패",
+        description: "공유 링크 생성에 실패했습니다.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    navigate('/')
+  }
+  
   const getNodeBgColor = (position: StaffMember['position']) => {
     switch(position) {
       case 'principal': return 'bg-gradient-primary text-white border-blue-500';
@@ -199,38 +292,39 @@ export const EmergencyNetworkPage = () => {
     }
   }
   
-  const renderOrganizationNode = (node: OrganizationNode) => (
-    <li key={node.id}>
-      <Card className={`node-card shadow-md border-2 min-w-[200px] ${getNodeBgColor(node.staff.position)}`}>
-        <CardContent className="p-3 text-center">
-          <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${getNodeLabelColor(node.staff.position)}`}>
-            {POSITION_LABELS[node.staff.position]}
-          </div>
-          <h3 className={`font-bold text-sm mb-1 ${node.staff.position === 'principal' ? 'text-white' : 'text-gray-800'}`}>
-            {node.staff.name}
-          </h3>
-          <p className={`text-xs ${node.staff.position === 'principal' ? 'text-white/90' : 'text-gray-600'}`}>
-            {node.staff.department}
-          </p>
-          <p className={`text-xs mt-1 ${node.staff.position === 'principal' ? 'text-white/80' : 'text-gray-500'}`}>
-            {node.staff.contact}
-          </p>
-        </CardContent>
-      </Card>
-      
-      {node.children && node.children.length > 0 && (
-        <ul>
-          {node.children.map(child => renderOrganizationNode(child))}
-        </ul>
-      )}
-    </li>
-  )
+  const renderOrganizationNode = (node: OrganizationNode) => {
+    const hasChildren = node.children && node.children.length > 0;
+    const useVerticalLayoutForChildren = node.staff.position === 'department_head';
 
-  const handleSaveLayout = async () => { /* ... */ };
-  const handlePrint = () => { window.print() };
-  const handleDownloadImage = async () => { /* ... */ };
-  const handleGenerateShareLink = async () => { /* ... */ };
-  const handleLogout = async () => { await supabase.auth.signOut(); navigate('/'); };
+    return (
+      <li key={node.id}>
+        <div className={`node-card ${hasChildren ? 'has-children' : ''}`}>
+          <Card className={`shadow-md border-2 min-w-[200px] ${getNodeBgColor(node.staff.position)}`}>
+            <CardContent className="p-3 text-center">
+              <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${getNodeLabelColor(node.staff.position)}`}>
+                {POSITION_LABELS[node.staff.position]}
+              </div>
+              <h3 className={`font-bold text-sm mb-1 ${node.staff.position === 'principal' ? 'text-white' : 'text-gray-800'}`}>
+                {node.staff.name}
+              </h3>
+              <p className={`text-xs ${node.staff.position === 'principal' ? 'text-white/90' : 'text-gray-600'}`}>
+                {node.staff.department}
+              </p>
+              <p className={`text-xs mt-1 ${node.staff.position === 'principal' ? 'text-white/80' : 'text-gray-500'}`}>
+                {node.staff.contact}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {hasChildren && (
+          <ul className={useVerticalLayoutForChildren ? 'is-vertical' : ''}>
+            {node.children.map(child => renderOrganizationNode(child))}
+          </ul>
+        )}
+      </li>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
