@@ -29,9 +29,10 @@ ON public.staff
 FOR SELECT 
 USING (auth.uid() = school_id);
 
-CREATE POLICY "Users can create their own staff" 
-ON public.staff 
-FOR INSERT 
+CREATE POLICY "Authenticated users can insert their own staff"
+ON public.staff
+FOR INSERT
+TO authenticated
 WITH CHECK (auth.uid() = school_id);
 
 CREATE POLICY "Users can update their own staff" 
