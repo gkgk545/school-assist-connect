@@ -49,21 +49,6 @@ const getPositionOrder = (position: StaffMember['position']) => {
   }
 }
 
-// --- 확대/축소 컨트롤 컴포넌트 ---
-const Controls = ({ zoomIn, zoomOut, resetTransform }: {
-    zoomIn: () => void;
-    zoomOut: () => void;
-    resetTransform: () => void;
-}) => {
-    return (
-        <div className="flex gap-2 p-2 rounded-md bg-white border shadow-md print:hidden">
-            <Button variant="outline" size="icon" onClick={zoomIn} aria-label="Zoom In"> <ZoomIn className="h-4 w-4" /> </Button>
-            <Button variant="outline" size="icon" onClick={zoomOut} aria-label="Zoom Out"> <ZoomOut className="h-4 w-4" /> </Button>
-            <Button variant="outline" size="icon" onClick={resetTransform} aria-label="Reset Zoom"> <RotateCcw className="h-4 w-4" /> </Button>
-        </div>
-    );
-};
-
 // --- 메인 페이지 컴포넌트 ---
 export const EmergencyNetworkPage = () => {
   const [organizationTree, setOrganizationTree] = useState<OrganizationNode[]>([])
