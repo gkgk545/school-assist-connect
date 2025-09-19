@@ -154,14 +154,28 @@ export const EmergencyNetworkPage = () => {
 
   const handleDownloadImage = async () => {
     const element = orgChartRef.current;
-    // 컨트롤 함수 ref와 캡처할 요소가 있는지 확인
     if (!element || !transformControlsRef.current) return;
 
-    // 현재 확대/축소 상태를 저장 (라이브러리가 직접적인 상태 조회를 지원하지 않으므로, 리셋만 수행)
     const resetTransform = transformControlsRef.current;
     
     // 캡처 전에 화면을 초기 상태로 리셋
     resetTransform();
+
+    // 제목(h2)과 부제목(p) 요소를 찾아 스타일을 직접 변경
+    const titleElement = element.querySelector('h2');
+    const subtitleElement = element.querySelector('p');
+    const originalTitleStyles = titleElement ? titleElement.style.cssText : '';
+    const originalSubtitleStyles = subtitleElement ? subtitleElement.style.cssText : '';
+
+    if (titleElement) {
+      titleElement.style.transform = 'scale(1)';
+      titleElement.style.webkitTransform = 'scale(1)';
+    }
+    if (subtitleElement) {
+        subtitleElement.style.transform = 'scale(1)';
+        subtitleElement.style.webkitTransform = 'scale(1)';
+    }
+
 
     // DOM이 업데이트될 시간을 잠시 기다림
     setTimeout(async () => {
@@ -179,10 +193,13 @@ export const EmergencyNetworkPage = () => {
         } catch (error) {
             console.error("다운로드 실패:", error);
             toast({ title: "다운로드 실패", description: "이미지를 생성하는 중 오류가 발생했습니다.", variant: "destructive" });
+        } finally {
+            // 캡처 후 원래 스타일로 복원
+            if (titleElement) titleElement.style.cssText = originalTitleStyles;
+            if (subtitleElement) subtitleElement.style.cssText = originalSubtitleStyles;
         }
-    }, 100); // 100ms 지연
+    }, 100);
   };
-
   const handleGenerateShareLink = async () => {
     if (!user) {
         toast({ title: "공유 실패", description: "로그인이 필요합니다.", variant: "destructive" });
