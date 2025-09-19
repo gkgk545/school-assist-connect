@@ -199,7 +199,7 @@ export const EmergencyNetworkPage = () => {
     }
   }
   
-  const renderOrganizationNode = (node: OrganizationNode): JSX.Element => (
+  const renderOrganizationNode = (node: OrganizationNode) => (
     <li key={node.id}>
       <Card className={`node-card shadow-md border-2 min-w-[200px] ${getNodeBgColor(node.staff.position)}`}>
         <CardContent className="p-3 text-center">
@@ -300,7 +300,7 @@ export const EmergencyNetworkPage = () => {
                             wrapperStyle={{ width: '100%', height: 'calc(100vh - 250px)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
                             contentStyle={{ width: '100%', height: '100%' }}
                         >
-                            <div ref={orgChartRef} className="bg-white rounded-lg p-6 h-full w-full overflow-auto">
+                            <div ref={orgChartRef} className="bg-white rounded-lg p-6 h-full w-full">
                                 <div className="text-center mb-8">
                                     <h2 className="text-3xl font-bold text-education-primary mb-2">
                                         {user?.user_metadata?.school_name || '학교'} 비상연락망
@@ -311,10 +311,10 @@ export const EmergencyNetworkPage = () => {
                                 </div>
 
                                 {organizationTree.length > 0 ? (
-                                    <div className="flex justify-center items-start min-h-full py-8">
-                                        <ul className="org-chart">
-                                            {organizationTree.map((node) => renderOrganizationNode(node))}
-                                        </ul>
+                                    <div className="flex justify-center items-center h-full">
+                                      <ul className="org-chart">
+                                          {organizationTree.map((node) => renderOrganizationNode(node))}
+                                      </ul>
                                     </div>
                                 ) : (
                                     <div className="text-center py-12">
@@ -337,10 +337,60 @@ export const EmergencyNetworkPage = () => {
             </TransformWrapper>
           </div>
           <div className="lg:w-80 print:hidden">
-            {/* Right sidebar content remains unchanged */}
+            <Card className="shadow-medium">
+                <CardContent className="p-6">
+                    <h3 className="font-semibold text-education-primary mb-4">사용 방법</h3>
+                    <div className="space-y-3 text-sm text-education-neutral">
+                        <div className="flex items-start space-x-2">
+                            <div className="w-2 h-2 bg-education-primary rounded-full mt-2 flex-shrink-0"></div>
+                            <p>마우스 휠 또는 컨트롤 버튼으로 조직도를 확대/축소할 수 있습니다.</p>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                            <div className="w-2 h-2 bg-education-secondary rounded-full mt-2 flex-shrink-0"></div>
+                            <p>마우스로 드래그하여 조직도를 이동할 수 있습니다.</p>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                            <div className="w-2 h-2 bg-education-primary rounded-full mt-2 flex-shrink-0"></div>
+                            <p>인쇄 또는 이미지로 다운로드할 수 있습니다.</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {shareUrl && (
+              <Card className="mt-4 shadow-medium">
+                <CardContent className="p-4">
+                  <h4 className="font-medium text-education-primary mb-2">공유 링크</h4>
+                  <div className="flex items-center space-x-2">
+                    <Input value={shareUrl} readOnly className="text-xs" />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigator.clipboard.writeText(shareUrl)}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
+      <style dangerouslySetInnerHTML={{ __html: `
+          @media print {
+            @page {
+              margin: 1cm;
+              size: A4 landscape;
+            }
+            .print\\:hidden { display: none !important; }
+            body { background: white !important; }
+            .org-chart {
+                transform: scale(0.7);
+                transform-origin: top left;
+            }
+          }
+      `}} />
     </div>
   )
 }
