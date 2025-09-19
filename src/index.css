@@ -119,3 +119,63 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Add this to the end of src/index.css */
+.org-tree ul {
+  position: relative;
+  padding-top: 2rem; /* space for connector line */
+  display: flex;
+  justify-content: center;
+}
+
+.org-tree li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-left: 1.5rem; /* gap between siblings */
+  padding-right: 1.5rem; /* gap between siblings */
+  position: relative;
+}
+
+/* Vertical line from parent to this node's horizontal connector */
+.org-tree li::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1px;
+  height: 2rem; /* same as ul padding-top */
+  background-color: #9ca3af; /* gray-400 */
+  transform: translateX(-50%);
+}
+
+/* Horizontal line connecting siblings */
+.org-tree li::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #9ca3af; /* gray-400 */
+}
+
+/* Remove connectors for the root node */
+.org-tree > li::before, .org-tree > li::after {
+  display: none;
+}
+
+/* Remove horizontal line if there's only one child */
+.org-tree li:only-child::after {
+  display: none;
+}
+
+/* Adjust horizontal line for the first child to start from its center */
+.org-tree li:first-child::after {
+  left: 50%;
+}
+
+/* Adjust horizontal line for the last child to end at its center */
+.org-tree li:last-child::after {
+  right: 50%;
+}
