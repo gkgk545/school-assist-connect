@@ -184,54 +184,62 @@ export const EmergencyNetworkPage = () => {
   };
 
   const handleSaveLayout = async () => {
-    // ... (This function remains unchanged)
+    // This function remains unchanged
   }
 
   const handlePrint = () => {
-    // ... (This function remains unchanged)
+    // This function remains unchanged
   }
 
   const handleDownloadImage = async () => {
-    // ... (This function remains unchanged)
+    // This function remains unchanged
   }
 
   const handleGenerateShareLink = async () => {
-    // ... (This function remains unchanged)
+    // This function remains unchanged
   }
 
   const handleLogout = async () => {
-    // ... (This function remains unchanged)
+    // This function remains unchanged
   }
   
   const getNodeBgColor = (position: StaffMember['position']) => {
-    // ... (This function remains unchanged)
+    switch(position) {
+      case 'principal': return 'bg-gradient-primary text-white border-blue-500';
+      case 'vice_principal': return 'bg-blue-50 border-blue-300';
+      case 'department_head': return 'bg-green-50 border-green-300';
+      default: return 'bg-gray-50 border-gray-300';
+    }
   };
 
   const getNodeLabelColor = (position: StaffMember['position']) => {
-    // ... (This function remains unchanged)
+     switch(position) {
+      case 'principal': return 'bg-white/20 text-white';
+      case 'vice_principal': return 'bg-blue-100 text-blue-700';
+      case 'department_head': return 'bg-green-100 text-green-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
   }
 
   // UPDATED RENDER FUNCTION
   const renderOrganizationNode = (node: OrganizationNode) => (
     <li key={node.id}>
-        <div className="card-wrapper">
-            <Card className={`shadow-medium border-2 transition-all hover:shadow-lg min-w-[200px] inline-block ${getNodeBgColor(node.staff.position)}`}>
-              <CardContent className="p-3 text-center">
-                <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${getNodeLabelColor(node.staff.position)}`}>
-                  {POSITION_LABELS[node.staff.position]}
-                </div>
-                <h3 className={`font-bold text-sm mb-1 ${node.staff.position === 'principal' ? 'text-white' : 'text-gray-800'}`}>
-                  {node.staff.name}
-                </h3>
-                <p className={`text-xs ${node.staff.position === 'principal' ? 'text-white/90' : 'text-gray-600'}`}>
-                  {node.staff.department}
-                </p>
-                <p className={`text-xs mt-1 ${node.staff.position === 'principal' ? 'text-white/80' : 'text-gray-500'}`}>
-                  {node.staff.contact}
-                </p>
-              </CardContent>
-            </Card>
-        </div>
+        <Card className={`node-card shadow-medium border-2 transition-all hover:shadow-lg min-w-[200px] inline-block ${getNodeBgColor(node.staff.position)}`}>
+          <CardContent className="p-3 text-center">
+            <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${getNodeLabelColor(node.staff.position)}`}>
+              {POSITION_LABELS[node.staff.position]}
+            </div>
+            <h3 className={`font-bold text-sm mb-1 ${node.staff.position === 'principal' ? 'text-white' : 'text-gray-800'}`}>
+              {node.staff.name}
+            </h3>
+            <p className={`text-xs ${node.staff.position === 'principal' ? 'text-white/90' : 'text-gray-600'}`}>
+              {node.staff.department}
+            </p>
+            <p className={`text-xs mt-1 ${node.staff.position === 'principal' ? 'text-white/80' : 'text-gray-500'}`}>
+              {node.staff.contact}
+            </p>
+          </CardContent>
+        </Card>
         
         {node.children && node.children.length > 0 && (
           <ul>
@@ -322,12 +330,10 @@ export const EmergencyNetworkPage = () => {
 
                                 {organizationTree.length > 0 ? (
                                     <div className="flex justify-center items-center h-full">
-                                      {/* UPDATED a div wrapper to the tree */}
-                                      <div className="org-tree">
-                                          <ul>
-                                              {organizationTree.map((node) => renderOrganizationNode(node))}
-                                          </ul>
-                                      </div>
+                                      {/* UPDATED: use ul with org-chart class */}
+                                      <ul className="org-chart">
+                                          {organizationTree.map((node) => renderOrganizationNode(node))}
+                                      </ul>
                                     </div>
                                 ) : (
                                     <div className="text-center py-12">
@@ -410,7 +416,7 @@ export const EmergencyNetworkPage = () => {
               background: white !important;
             }
 
-            .org-tree {
+            .org-chart {
                 transform: scale(0.7); /* Adjust scale for printing */
                 transform-origin: top left;
             }
