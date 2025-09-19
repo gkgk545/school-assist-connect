@@ -183,8 +183,8 @@ All colors MUST be HSL.
   right: 50%;
 }
 
-/* 부모 카드에서 자식들로 내려가는 수직선 */
-.card-wrapper::after {
+/* 부모 카드에서 자식 ul로 내려가는 수직선 - 자식이 있을 때만 표시 */
+.has-children > .card-wrapper::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -193,9 +193,4 @@ All colors MUST be HSL.
   height: 2rem; /* li의 padding-top과 동일한 값 */
   background-color: #9ca3af;
   transform: translateX(-50%) translateY(100%);
-}
-
-/* 자식이 없는 노드의 아래쪽 수직선은 숨김 */
-.org-tree li:not(:has(ul)) .card-wrapper::after {
-  display: none;
 }
