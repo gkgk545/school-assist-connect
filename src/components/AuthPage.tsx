@@ -13,13 +13,13 @@ import heroImage from '@/assets/school-network-hero.png'
 export const AuthPage = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [loginForm, setLoginForm] = useState({
-    schoolName: '',
-    contactPerson: '',
+    email: '',
     password: ''
   })
   const [signupForm, setSignupForm] = useState({
     schoolName: '',
     contactPerson: '',
+    email: '',
     password: '',
     confirmPassword: ''
   })
@@ -32,11 +32,8 @@ export const AuthPage = () => {
     setIsLoading(true)
 
     try {
-      // For now, we'll use a simple email format: schoolname-contactperson@school.local
-      const email = `${loginForm.schoolName.toLowerCase().replace(/\s+/g, '-')}-${loginForm.contactPerson.toLowerCase().replace(/\s+/g, '-')}@school.local`
-      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: loginForm.email,
         password: loginForm.password,
       })
 
@@ -44,7 +41,7 @@ export const AuthPage = () => {
 
       toast({
         title: "로그인 성공",
-        description: `${loginForm.schoolName}에 로그인했습니다.`,
+        description: "성공적으로 로그인했습니다.",
       })
 
       navigate('/staff-input')
@@ -74,12 +71,11 @@ export const AuthPage = () => {
     setIsLoading(true)
 
     try {
-      const email = `${signupForm.schoolName.toLowerCase().replace(/\s+/g, '-')}-${signupForm.contactPerson.toLowerCase().replace(/\s+/g, '-')}@school.local`
-      
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: signupForm.email,
         password: signupForm.password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             school_name: signupForm.schoolName,
             contact_person: signupForm.contactPerson,
@@ -142,24 +138,13 @@ export const AuthPage = () => {
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-school">학교명</Label>
+                    <Label htmlFor="login-email">이메일</Label>
                     <Input
-                      id="login-school"
-                      type="text"
-                      placeholder="○○초등학교"
-                      value={loginForm.schoolName}
-                      onChange={(e) => setLoginForm({ ...loginForm, schoolName: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-contact">담당자명</Label>
-                    <Input
-                      id="login-contact"
-                      type="text"
-                      placeholder="홍길동"
-                      value={loginForm.contactPerson}
-                      onChange={(e) => setLoginForm({ ...loginForm, contactPerson: e.target.value })}
+                      id="login-email"
+                      type="email"
+                      placeholder="school@example.com"
+                      value={loginForm.email}
+                      onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                       required
                     />
                   </div>
@@ -200,6 +185,17 @@ export const AuthPage = () => {
                       placeholder="홍길동"
                       value={signupForm.contactPerson}
                       onChange={(e) => setSignupForm({ ...signupForm, contactPerson: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">이메일</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="school@example.com"
+                      value={signupForm.email}
+                      onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })}
                       required
                     />
                   </div>
