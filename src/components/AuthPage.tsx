@@ -11,9 +11,10 @@ import { useNavigate } from 'react-router-dom'
 export const AuthPage = () => {
   const [activeTab, setActiveTab] = useState('login');
   
-  const [loginSchoolName, setLoginSchoolName] = useState('')
+  const [loginSchoolId, setLoginSchoolId] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
   
+  const [signUpSchoolId, setSignUpSchoolId] = useState('')
   const [signUpSchoolName, setSignUpSchoolName] = useState('')
   const [signUpPassword, setSignUpPassword] = useState('')
 
@@ -33,23 +34,17 @@ export const AuthPage = () => {
   }, [navigate]);
   
 
-  // 더 안전하게 이메일을 생성하는 함수
-  const createUniqueEmailFromSchoolName = (name: string) => {
-    // 1. 모든 공백을 '_'로 변경
-    // 2. 이메일에 허용되지 않는 특수문자 제거 (한글, 영문, 숫자, 밑줄, 점, 하이픈만 허용)
-    // 3. 소문자로 변환
-    const sanitizedName = name
-      .replace(/\s+/g, '_')
-      .replace(/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣_.-]/g, '')
-      .toLowerCase();
-    return `${sanitizedName}@school.app`;
+  // 학교 ID를 기반으로 이메일 주소 생성
+  const createEmailFromSchoolId = (id: string) => {
+    const sanitizedId = id.trim().toLowerCase();
+    return `${sanitizedId}@school.app`;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     
-    const email = createUniqueEmailFromSchoolName(loginSchoolName);
+    const email = createEmailFromSchoolId(loginSchoolId);
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -59,7 +54,7 @@ export const AuthPage = () => {
     if (error) {
       toast({
         title: "로그인 실패",
-        description: "학교명 또는 비밀번호를 확인해주세요.",
+        description: "학교 ID 또는 비밀번호를 확인해주세요.",
         variant: "destructive",
       })
     } else {
@@ -74,10 +69,10 @@ export const AuthPage = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!signUpSchoolName || !signUpPassword) {
+    if (!signUpSchoolId || !signUpSchoolName || !signUpPassword) {
         toast({
             title: "입력 오류",
-            description: "학교명과 비밀번호를 모두 입력해주세요.",
+            description: "모든 필드를 입력해주세요.",
             variant: "destructive",
         });
         return;
@@ -85,24 +80,23 @@ export const AuthPage = () => {
 
     setLoading(true)
 
-    const email = createUniqueEmailFromSchoolName(signUpSchoolName);
+    const email = createEmailFromSchoolId(signUpSchoolId);
 
     const { error } = await supabase.auth.signUp({
       email,
       password: signUpPassword,
       options: {
         data: {
-          school_name: signUpSchoolName,
+          school_name: signUpSchoolName, // 표시될 학교 이름은 메타데이터로 저장
         }
       }
     })
 
     if (error) {
       console.error('Signup Error:', error);
-      // Supabase에서 받은 실제 에러 메시지를 보여줍니다.
       toast({
         title: "회원가입 실패",
-        description: error.message,
+        description: error.message, // Supabase의 실제 에러 메시지를 표시
         variant: "destructive",
       })
     } else {
@@ -110,10 +104,10 @@ export const AuthPage = () => {
         title: "회원가입 성공!",
         description: "로그인 탭에서 바로 로그인해주세요.",
       })
-      // 입력 필드 초기화 및 로그인 탭으로 전환
+      setSignUpSchoolId('');
       setSignUpSchoolName('');
       setSignUpPassword('');
-      setLoginSchoolName(signUpSchoolName); // 편의를 위해 로그인 폼에 학교명 채워주기
+      setLoginSchoolId(signUpSchoolId); // 편의를 위해 로그인 폼에 ID 채워주기
       setActiveTab('login');
     }
     setLoading(false)
@@ -132,19 +126,19 @@ export const AuthPage = () => {
               <CardHeader>
                 <CardTitle>로그인</CardTitle>
                 <CardDescription>
-                  가입 시 사용한 학교명과 비밀번호를 입력하세요.
+                  가입 시 사용한 학교 ID와 비밀번호를 입력하세요.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="school-name-login">학교명</Label>
+                  <Label htmlFor="school-id-login">학교 ID</Label>
                   <Input 
-                    id="school-name-login" 
+                    id="school-id-login" 
                     type="text" 
-                    placeholder="예: 행복초등학교" 
+                    placeholder="예: hangbok_cho" 
                     required 
-                    value={loginSchoolName}
-                    onChange={(e) => setLoginSchoolName(e.target.value)}
+                    value={loginSchoolId}
+                    onChange={(e) => setLoginSchoolId(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -170,12 +164,23 @@ export const AuthPage = () => {
               <CardHeader>
                 <CardTitle>회원가입</CardTitle>
                 <CardDescription>
-                  학교명과 비밀번호를 입력하여 계정을 생성하세요.
+                  다른 학교와 겹치지 않는 고유 ID를 만들어주세요.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="school-name-signup">학교명</Label>
+                  <Label htmlFor="school-id-signup">학교 ID (로그인 시 사용)</Label>
+                  <Input 
+                    id="school-id-signup" 
+                    type="text" 
+                    placeholder="공백 없는 영문, 숫자 조합" 
+                    required 
+                    value={signUpSchoolId}
+                    onChange={(e) => setSignUpSchoolId(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="school-name-signup">학교명 (표시용)</Label>
                   <Input 
                     id="school-name-signup" 
                     type="text" 
