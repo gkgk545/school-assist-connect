@@ -72,6 +72,8 @@ export const EmergencyNetworkPage = () => {
   const [shareUrl, setShareUrl] = useState('')
   const [copySuccess, setCopySuccess] = useState(false)
   const orgChartRef = useRef<HTMLDivElement>(null)
+  // transform 컨트롤 함수를 저장하기 위한 ref 추가
+  const transformControlsRef = useRef<(() => void) | null>(null);
   
   const { toast } = useToast()
   const navigate = useNavigate()
@@ -152,23 +154,33 @@ export const EmergencyNetworkPage = () => {
 
   const handleDownloadImage = async () => {
     const element = orgChartRef.current;
-    if (!element) return;
+    // 컨트롤 함수 ref와 캡처할 요소가 있는지 확인
+    if (!element || !transformControlsRef.current) return;
 
-    try {
-      const canvas = await html2canvas(element, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true, 
-      });
-      const link = document.createElement('a');
-      link.download = `비상연락망_${new Date().toLocaleDateString().replace(/\s/g, '')}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-      toast({ title: "이미지 다운로드 성공" });
-    } catch (error) {
-      console.error("다운로드 실패:", error);
-      toast({ title: "다운로드 실패", description: "이미지를 생성하는 중 오류가 발생했습니다.", variant: "destructive" });
-    }
+    // 현재 확대/축소 상태를 저장 (라이브러리가 직접적인 상태 조회를 지원하지 않으므로, 리셋만 수행)
+    const resetTransform = transformControlsRef.current;
+    
+    // 캡처 전에 화면을 초기 상태로 리셋
+    resetTransform();
+
+    // DOM이 업데이트될 시간을 잠시 기다림
+    setTimeout(async () => {
+        try {
+            const canvas = await html2canvas(element, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                useCORS: true, 
+            });
+            const link = document.createElement('a');
+            link.download = `비상연락망_${new Date().toLocaleDateString().replace(/\s/g, '')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            toast({ title: "이미지 다운로드 성공" });
+        } catch (error) {
+            console.error("다운로드 실패:", error);
+            toast({ title: "다운로드 실패", description: "이미지를 생성하는 중 오류가 발생했습니다.", variant: "destructive" });
+        }
+    }, 100); // 100ms 지연
   };
 
   const handleGenerateShareLink = async () => {
@@ -262,45 +274,49 @@ export const EmergencyNetworkPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex-1 relative">
           <TransformWrapper initialScale={0.8} minScale={0.1} maxScale={3} limitToBounds={false} centerOnInit>
-            {(props) => (
-              <>
-                <div className="mb-6 print:hidden">
-                  <div className="flex flex-wrap gap-3 justify-between items-center">
-                    <div className="flex flex-wrap gap-3">
-                        <Button variant="outline" onClick={handlePrint}> <Printer className="h-4 w-4 mr-2" /> 인쇄 </Button>
-                        <Button variant="outline" onClick={handleDownloadImage}> <Download className="h-4 w-4 mr-2" /> 이미지 다운로드 </Button>
-                        <Button variant="outline" onClick={handleGenerateShareLink}>
-                            {copySuccess ? <CheckCircle className="h-4 w-4 mr-2 text-green-500" /> : <Share2 className="h-4 w-4 mr-2" />}
-                            {copySuccess ? '복사됨!' : '링크 공유'}
-                        </Button>
-                    </div>
-                    <Controls {...props} />
-                  </div>
-                </div>
-                <TransformComponent wrapperStyle={{ width: '100%', height: 'calc(100vh - 250px)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}>
-                  <div ref={orgChartRef} className="bg-white rounded-lg p-6">
-                      <div className="text-center mb-12">
-                        <h2 className="text-3xl font-bold text-education-primary mb-2"> {user?.user_metadata?.school_name || '학교'} 비상연락망 </h2>
-                        <p className="text-education-neutral"> 생성일: {new Date().toLocaleDateString()} </p>
+            {(props) => {
+              // 컨트롤 함수의 resetTransform을 ref에 할당
+              transformControlsRef.current = props.resetTransform;
+              return (
+                <>
+                  <div className="mb-6 print:hidden">
+                    <div className="flex flex-wrap gap-3 justify-between items-center">
+                      <div className="flex flex-wrap gap-3">
+                          <Button variant="outline" onClick={handlePrint}> <Printer className="h-4 w-4 mr-2" /> 인쇄 </Button>
+                          <Button variant="outline" onClick={handleDownloadImage}> <Download className="h-4 w-4 mr-2" /> 이미지 다운로드 </Button>
+                          <Button variant="outline" onClick={handleGenerateShareLink}>
+                              {copySuccess ? <CheckCircle className="h-4 w-4 mr-2 text-green-500" /> : <Share2 className="h-4 w-4 mr-2" />}
+                              {copySuccess ? '복사됨!' : '링크 공유'}
+                          </Button>
                       </div>
-                      {organizationTree.length > 0 ? (
-                          <div className="flex justify-center items-start">
-                            <ul className="org-chart">
-                                {organizationTree.map((node) => renderOrganizationNode(node))}
-                            </ul>
-                          </div>
-                      ) : (
-                          <div className="text-center py-12">
-                            <Users className="h-16 w-16 text-education-neutral/50 mx-auto mb-4" />
-                            <h3 className="text-xl font-semibold text-education-neutral mb-2"> 교직원 정보가 없습니다 </h3>
-                            <p className="text-education-neutral/80 mb-6"> 먼저 교직원 정보를 입력해주세요. </p>
-                            <Button onClick={() => navigate('/staff-input')} className="bg-gradient-primary hover:opacity-90"> 교직원 정보 입력하기 </Button>
-                          </div>
-                      )}
+                      <Controls />
+                    </div>
                   </div>
-                </TransformComponent>
-              </>
-            )}
+                  <TransformComponent wrapperStyle={{ width: '100%', height: 'calc(100vh - 250px)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}>
+                    <div ref={orgChartRef} className="bg-white rounded-lg p-6">
+                        <div className="text-center mb-12">
+                          <h2 className="text-3xl font-bold text-education-primary mb-2"> {user?.user_metadata?.school_name || '학교'} 비상연락망 </h2>
+                          <p className="text-education-neutral"> 생성일: {new Date().toLocaleDateString()} </p>
+                        </div>
+                        {organizationTree.length > 0 ? (
+                            <div className="flex justify-center items-start">
+                              <ul className="org-chart">
+                                  {organizationTree.map((node) => renderOrganizationNode(node))}
+                              </ul>
+                            </div>
+                        ) : (
+                            <div className="text-center py-12">
+                              <Users className="h-16 w-16 text-education-neutral/50 mx-auto mb-4" />
+                              <h3 className="text-xl font-semibold text-education-neutral mb-2"> 교직원 정보가 없습니다 </h3>
+                              <p className="text-education-neutral/80 mb-6"> 먼저 교직원 정보를 입력해주세요. </p>
+                              <Button onClick={() => navigate('/staff-input')} className="bg-gradient-primary hover:opacity-90"> 교직원 정보 입력하기 </Button>
+                            </div>
+                        )}
+                    </div>
+                  </TransformComponent>
+                </>
+              );
+            }}
           </TransformWrapper>
           <p className="text-center text-sm text-muted-foreground mt-2 print:hidden">(조직도를 마우스로 드래그하여 이동할 수 있습니다)</p>
         </div>
