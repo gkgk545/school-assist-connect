@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
+
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -258,20 +258,6 @@ export const EmergencyNetworkPage = () => {
     setOrganizationTree(tree)
   }
 
-  const handleDragEnd = (result: any) => {
-    // Handle drag and drop logic here
-    // This is a simplified version - you can enhance it based on your needs
-    console.log('Drag ended:', result)
-    
-    if (!result.destination) return
-
-    // You can implement complex drag and drop logic here
-    // For now, we'll just show a toast
-    toast({
-      title: "구조 변경됨",
-      description: "조직도 구조가 변경되었습니다. '레이아웃 저장'을 클릭하여 저장하세요.",
-    })
-  }
 
   const handleSaveLayout = async () => {
     setIsLoading(true)
@@ -366,59 +352,85 @@ export const EmergencyNetworkPage = () => {
     navigate('/')
   }
 
-  const renderOrganizationNode = (node: OrganizationNode, index: number) => (
-    <Draggable key={node.id} draggableId={node.id} index={index}>
-      {(provided, snapshot) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          className={`mb-4 ${snapshot.isDragging ? 'opacity-50' : ''}`}
-        >
-          <Card className={`shadow-medium border-l-4 border-l-education-primary ${
-            node.level === 1 ? 'bg-gradient-primary text-white' :
-            node.level === 2 ? 'bg-education-light' :
-            'bg-white'
-          }`}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-2">
-                  <div className={`px-2 py-1 rounded text-xs font-medium ${
-                    node.level === 1 ? 'bg-white/20 text-white' :
-                    'bg-education-primary/10 text-education-primary'
-                  }`}>
-                    {POSITION_LABELS[node.staff.position]}
-                  </div>
-                  <span className={`text-xs ${
-                    node.level === 1 ? 'text-white/80' : 'text-education-neutral'
-                  }`}>
-                    {node.staff.department}
-                  </span>
-                </div>
-              </div>
-              <h3 className={`font-bold text-lg mb-1 ${
-                node.level === 1 ? 'text-white' : 'text-education-primary'
-              }`}>
-                {node.staff.name}
-              </h3>
-              <p className={`text-sm ${
-                node.level === 1 ? 'text-white/90' : 'text-education-neutral'
-              }`}>
-                {node.staff.contact}
-              </p>
-            </CardContent>
-          </Card>
-          
-          {node.children.length > 0 && (
-            <div className="ml-8 pl-4 border-l-2 border-education-light">
-              {node.children.map((child, childIndex) => 
-                renderOrganizationNode(child, childIndex)
-              )}
+  const renderOrganizationNode = (node: OrganizationNode) => (
+    <div key={node.id} className="flex flex-col items-center">
+      {/* Staff Member Box */}
+      <div className="relative">
+        <Card className={`shadow-medium border-2 transition-all hover:shadow-lg min-w-[200px] ${
+          node.level === 1 ? 'bg-gradient-primary text-white border-blue-500' :
+          node.level === 2 ? 'bg-blue-50 border-blue-300' :
+          node.level === 3 ? 'bg-green-50 border-green-300' :
+          'bg-gray-50 border-gray-300'
+        }`}>
+          <CardContent className="p-3 text-center">
+            <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${
+              node.level === 1 ? 'bg-white/20 text-white' :
+              node.level === 2 ? 'bg-blue-100 text-blue-700' :
+              node.level === 3 ? 'bg-green-100 text-green-700' :
+              'bg-gray-100 text-gray-700'
+            }`}>
+              {POSITION_LABELS[node.staff.position]}
+            </div>
+            <h3 className={`font-bold text-sm mb-1 ${
+              node.level === 1 ? 'text-white' : 'text-gray-800'
+            }`}>
+              {node.staff.name}
+            </h3>
+            <p className={`text-xs ${
+              node.level === 1 ? 'text-white/90' : 'text-gray-600'
+            }`}>
+              {node.staff.department}
+            </p>
+            <p className={`text-xs mt-1 ${
+              node.level === 1 ? 'text-white/80' : 'text-gray-500'
+            }`}>
+              {node.staff.contact}
+            </p>
+          </CardContent>
+        </Card>
+        
+        {/* Connecting line downward */}
+        {node.children.length > 0 && (
+          <div className="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-8 bg-gray-400 top-full"></div>
+        )}
+      </div>
+      
+      {/* Children */}
+      {node.children.length > 0 && (
+        <div className="mt-8 flex flex-col items-center">
+          {/* Horizontal line for multiple children */}
+          {node.children.length > 1 && (
+            <div className="relative flex items-center justify-center w-full mb-8">
+              <div className="h-0.5 bg-gray-400 w-full absolute top-0"></div>
+              {node.children.map((_, index) => (
+                <div 
+                  key={index}
+                  className="w-0.5 h-8 bg-gray-400 absolute top-0"
+                  style={{
+                    left: `${(100 / (node.children.length + 1)) * (index + 1)}%`,
+                    transform: 'translateX(-50%)'
+                  }}
+                ></div>
+              ))}
             </div>
           )}
+          
+          {/* Single child - just a vertical line */}
+          {node.children.length === 1 && (
+            <div className="w-0.5 h-8 bg-gray-400 mb-0"></div>
+          )}
+          
+          {/* Children nodes */}
+          <div className={`flex gap-12 items-start ${
+            node.children.length > 1 ? 'justify-center' : ''
+          }`}>
+            {node.children.map((child) => 
+              renderOrganizationNode(child)
+            )}
+          </div>
         </div>
       )}
-    </Draggable>
+    </div>
   )
 
   return (
@@ -430,7 +442,7 @@ export const EmergencyNetworkPage = () => {
               <Network className="h-8 w-8 text-education-primary" />
               <div>
                 <h1 className="text-2xl font-bold text-education-primary">비상연락망</h1>
-                <p className="text-education-neutral">드래그하여 구조를 수정할 수 있습니다</p>
+                <p className="text-education-neutral">계층형 조직도</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -485,22 +497,15 @@ export const EmergencyNetworkPage = () => {
               </div>
 
               {organizationTree.length > 0 ? (
-                <DragDropContext onDragEnd={handleDragEnd}>
-                  <Droppable droppableId="organization-tree">
-                    {(provided) => (
-                      <div
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                        className="space-y-4"
-                      >
-                        {organizationTree.map((node, index) => 
-                          renderOrganizationNode(node, index)
-                        )}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
+                <div className="overflow-x-auto">
+                  <div className="min-w-max py-8">
+                    <div className="flex flex-col items-center space-y-16">
+                      {organizationTree.map((node) => 
+                        renderOrganizationNode(node)
+                      )}
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <div className="text-center py-12">
                   <Users className="h-16 w-16 text-education-neutral/50 mx-auto mb-4" />
@@ -523,10 +528,10 @@ export const EmergencyNetworkPage = () => {
               <CardContent className="p-6">
                 <h3 className="font-semibold text-education-primary mb-4">사용 방법</h3>
                 <div className="space-y-3 text-sm text-education-neutral">
-                  <div className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-education-primary rounded-full mt-2 flex-shrink-0"></div>
-                    <p>카드를 드래그하여 조직도 구조를 변경할 수 있습니다.</p>
-                  </div>
+                   <div className="flex items-start space-x-2">
+                     <div className="w-2 h-2 bg-education-primary rounded-full mt-2 flex-shrink-0"></div>
+                     <p>계층형 조직도로 구조를 명확하게 확인할 수 있습니다.</p>
+                   </div>
                   <div className="flex items-start space-x-2">
                     <div className="w-2 h-2 bg-education-secondary rounded-full mt-2 flex-shrink-0"></div>
                     <p>변경 후 '레이아웃 저장' 버튼을 눌러 저장하세요.</p>
