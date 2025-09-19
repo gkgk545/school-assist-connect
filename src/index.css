@@ -121,27 +121,23 @@ All colors MUST be HSL.
 }
 
 /* Add this to the end of src/index.css */
-/* src/index.css 파일의 기존 .org-tree 스타일을 아래 코드로 전체 교체하세요 */
-
 .org-tree {
   display: inline-flex;
   justify-content: center;
 }
 
 .org-tree ul {
-  position: relative;
-  padding-top: 2rem; /* 자식 노드로 이어지는 선을 위한 공간 */
   display: flex;
   justify-content: center;
+  position: relative;
 }
 
 .org-tree li {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-left: 1rem;
-  padding-right: 1rem;
   position: relative;
+  padding: 2rem 1rem 0 1rem; /* 상단에 연결선을 위한 공간 확보 */
 }
 
 /* 수평선 (형제 노드 연결) */
@@ -151,23 +147,23 @@ All colors MUST be HSL.
   top: 0;
   left: 0;
   right: 0;
-  height: 1px;
+  height: 1.5px;
   background-color: #9ca3af; /* gray-400 */
 }
 
-/* 수직선 (부모의 수평선과 현재 노드 연결) */
+/* 수직선 (카드와 수평선 연결) */
 .org-tree li::before {
   content: '';
   position: absolute;
   top: 0;
   left: 50%;
-  width: 1px;
-  height: 2rem; /* ul의 padding-top과 동일한 값 */
+  width: 1.5px;
+  height: 2rem; /* li의 padding-top과 동일한 값 */
   background-color: #9ca3af; /* gray-400 */
   transform: translateX(-50%);
 }
 
-/* 최상위 노드(들)의 연결선은 숨김 */
+/* 최상위 노드의 연결선은 숨김 */
 .org-tree > li::before, .org-tree > li::after {
   display: none;
 }
@@ -187,14 +183,14 @@ All colors MUST be HSL.
   right: 50%;
 }
 
-/* 부모 카드에서 자식 ul로 내려가는 수직선 */
+/* 부모 카드에서 자식들로 내려가는 수직선 */
 .card-wrapper::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 50%;
-  width: 1px;
-  height: 2rem; /* ul의 padding-top과 동일한 값 */
+  width: 1.5px;
+  height: 2rem; /* li의 padding-top과 동일한 값 */
   background-color: #9ca3af;
   transform: translateX(-50%) translateY(100%);
 }
