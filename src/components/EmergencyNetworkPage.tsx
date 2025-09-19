@@ -72,6 +72,17 @@ export const EmergencyNetworkPage = () => {
     checkUserAndLoadData();
   }, [navigate]);
 
+  // ✨ 추가된 코드: 조직도 데이터가 로드되면 화면을 중앙으로 리셋합니다.
+  useEffect(() => {
+    if (organizationTree.length > 0 && transformWrapperRef.current) {
+      const { resetTransform } = transformWrapperRef.current;
+      // 데이터가 렌더링될 시간을 주기 위해 짧은 지연 후 실행
+      setTimeout(() => {
+        resetTransform();
+      }, 100);
+    }
+  }, [organizationTree]);
+
   const loadStaffData = async (userId: string) => {
     try {
       const { data: staffData, error } = await supabase
@@ -84,6 +95,11 @@ export const EmergencyNetworkPage = () => {
       if (staffData && staffData.length > 0) {
         generateOrganizationTree(staffData);
       } else {
+        toast({
+          title: "교직원 정보 없음",
+          description: "먼저 교직원 정보를 입력해주세요.",
+          variant: "destructive"
+        });
         navigate('/staff-input');
       }
     } catch (error: any) {
