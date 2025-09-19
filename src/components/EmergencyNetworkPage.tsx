@@ -293,34 +293,41 @@ export const EmergencyNetworkPage = () => {
     }
   }
 
-  const renderOrganizationNode = (node: OrganizationNode) => (
-    <li key={node.id}>
+  const renderOrganizationNode = (node: OrganizationNode) => {
+    // 자식 노드 유무를 확인하는 변수 추가
+    const hasChildren = node.children && node.children.length > 0;
+
+    return (
+      // li 태그에 hasChildren 변수에 따라 클래스 동적 부여
+      <li key={node.id} className={hasChildren ? 'has-children' : ''}>
         <div className="card-wrapper relative">
-            <Card className={`shadow-medium border-2 transition-all hover:shadow-lg min-w-[200px] inline-block ${getNodeBgColor(node.staff.position)}`}>
-              <CardContent className="p-3 text-center">
-                <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${getNodeLabelColor(node.staff.position)}`}>
-                  {POSITION_LABELS[node.staff.position]}
-                </div>
-                <h3 className={`font-bold text-sm mb-1 ${node.staff.position === 'principal' ? 'text-white' : 'text-gray-800'}`}>
-                  {node.staff.name}
-                </h3>
-                <p className={`text-xs ${node.staff.position === 'principal' ? 'text-white/90' : 'text-gray-600'}`}>
-                  {node.staff.department}
-                </p>
-                <p className={`text-xs mt-1 ${node.staff.position === 'principal' ? 'text-white/80' : 'text-gray-500'}`}>
-                  {node.staff.contact}
-                </p>
-              </CardContent>
-            </Card>
+          <Card className={`shadow-medium border-2 transition-all hover:shadow-lg min-w-[200px] inline-block ${getNodeBgColor(node.staff.position)}`}>
+            <CardContent className="p-3 text-center">
+              <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${getNodeLabelColor(node.staff.position)}`}>
+                {POSITION_LABELS[node.staff.position]}
+              </div>
+              <h3 className={`font-bold text-sm mb-1 ${node.staff.position === 'principal' ? 'text-white' : 'text-gray-800'}`}>
+                {node.staff.name}
+              </h3>
+              <p className={`text-xs ${node.staff.position === 'principal' ? 'text-white/90' : 'text-gray-600'}`}>
+                {node.staff.department}
+              </p>
+              <p className={`text-xs mt-1 ${node.staff.position === 'principal' ? 'text-white/80' : 'text-gray-500'}`}>
+                {node.staff.contact}
+              </p>
+            </CardContent>
+          </Card>
         </div>
         
-        {node.children && node.children.length > 0 && (
+        {/* hasChildren 변수를 사용하여 조건부 렌더링 */}
+        {hasChildren && (
           <ul>
             {node.children.map(child => renderOrganizationNode(child))}
           </ul>
         )}
       </li>
-  )
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
