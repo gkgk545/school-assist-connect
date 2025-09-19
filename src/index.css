@@ -121,9 +121,16 @@ All colors MUST be HSL.
 }
 
 /* Add this to the end of src/index.css */
+/* src/index.css 파일의 기존 .org-tree 스타일을 아래 코드로 전체 교체하세요 */
+
+.org-tree {
+  display: inline-flex;
+  justify-content: center;
+}
+
 .org-tree ul {
   position: relative;
-  padding-top: 2rem; /* space for connector line */
+  padding-top: 2rem; /* 자식 노드로 이어지는 선을 위한 공간 */
   display: flex;
   justify-content: center;
 }
@@ -132,24 +139,12 @@ All colors MUST be HSL.
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-left: 1.5rem; /* gap between siblings */
-  padding-right: 1.5rem; /* gap between siblings */
+  padding-left: 1rem;
+  padding-right: 1rem;
   position: relative;
 }
 
-/* Vertical line from parent to this node's horizontal connector */
-.org-tree li::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 1px;
-  height: 2rem; /* same as ul padding-top */
-  background-color: #9ca3af; /* gray-400 */
-  transform: translateX(-50%);
-}
-
-/* Horizontal line connecting siblings */
+/* 수평선 (형제 노드 연결) */
 .org-tree li::after {
   content: '';
   position: absolute;
@@ -160,22 +155,51 @@ All colors MUST be HSL.
   background-color: #9ca3af; /* gray-400 */
 }
 
-/* Remove connectors for the root node */
+/* 수직선 (부모의 수평선과 현재 노드 연결) */
+.org-tree li::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1px;
+  height: 2rem; /* ul의 padding-top과 동일한 값 */
+  background-color: #9ca3af; /* gray-400 */
+  transform: translateX(-50%);
+}
+
+/* 최상위 노드(들)의 연결선은 숨김 */
 .org-tree > li::before, .org-tree > li::after {
   display: none;
 }
 
-/* Remove horizontal line if there's only one child */
+/* 자식이 하나일 경우 수평선 숨김 */
 .org-tree li:only-child::after {
   display: none;
 }
 
-/* Adjust horizontal line for the first child to start from its center */
-.org-tree li:first-child::after {
+/* 첫 번째 자식의 수평선은 오른쪽 절반만 표시 */
+.org-tree li:first-child:not(:only-child)::after {
   left: 50%;
 }
 
-/* Adjust horizontal line for the last child to end at its center */
-.org-tree li:last-child::after {
+/* 마지막 자식의 수평선은 왼쪽 절반만 표시 */
+.org-tree li:last-child:not(:only-child)::after {
   right: 50%;
+}
+
+/* 부모 카드에서 자식 ul로 내려가는 수직선 */
+.card-wrapper::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  height: 2rem; /* ul의 padding-top과 동일한 값 */
+  background-color: #9ca3af;
+  transform: translateX(-50%) translateY(100%);
+}
+
+/* 자식이 없는 노드의 아래쪽 수직선은 숨김 */
+.org-tree li:not(:has(ul)) .card-wrapper::after {
+  display: none;
 }
