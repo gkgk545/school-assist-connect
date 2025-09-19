@@ -6,13 +6,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
-import { 
-  Network, 
-  Save, 
-  Printer, 
-  Download, 
-  Share2, 
-  Edit3, 
+import {
+  Network,
+  Save,
+  Printer,
+  Download,
+  Share2,
+  Edit3,
   Users,
   Copy,
   CheckCircle,
@@ -55,11 +55,10 @@ const getPositionOrder = (position: StaffMember['position']) => {
   }
 }
 
-// Zoom Controls Component
-const Controls = () => {
-    const { zoomIn, zoomOut, resetTransform } = useControls();
+// Zoom Controls Component - 이제 props로 함수를 받습니다.
+const Controls = ({ zoomIn, zoomOut, resetTransform }: { zoomIn: () => void, zoomOut: () => void, resetTransform: () => void }) => {
     return (
-        <div className="flex gap-2 p-2 rounded-md bg-white border shadow-md absolute top-4 right-4 z-10 print:hidden">
+        <div className="flex gap-2 p-2 rounded-md bg-white border shadow-md print:hidden">
             <Button variant="outline" size="icon" onClick={() => zoomIn()} aria-label="Zoom In">
                 <ZoomIn className="h-4 w-4" />
             </Button>
@@ -296,7 +295,6 @@ export const EmergencyNetworkPage = () => {
 
   const renderOrganizationNode = (node: OrganizationNode) => (
     <li key={node.id}>
-        {/* 이 div를 추가해주세요 */}
         <div className="card-wrapper relative">
             <Card className={`shadow-medium border-2 transition-all hover:shadow-lg min-w-[200px] inline-block ${getNodeBgColor(node.staff.position)}`}>
               <CardContent className="p-3 text-center">
@@ -317,8 +315,7 @@ export const EmergencyNetworkPage = () => {
         </div>
         
         {node.children && node.children.length > 0 && (
-          // 이 ul에 있던 mt-8 클래스는 CSS에서 처리하므로 삭제합니다.
-          <ul> 
+          <ul>
             {node.children.map(child => renderOrganizationNode(child))}
           </ul>
         )}
@@ -353,31 +350,6 @@ export const EmergencyNetworkPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 relative">
-             <div className="mb-6 print:hidden">
-              <div className="flex flex-wrap gap-3">
-                <Button onClick={handleSaveLayout} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">
-                  <Save className="h-4 w-4 mr-2" />
-                  {isLoading ? '저장 중...' : '레이아웃 저장'}
-                </Button>
-                <Button variant="outline" onClick={handlePrint}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  인쇄
-                </Button>
-                <Button variant="outline" onClick={handleDownloadImage}>
-                  <Download className="h-4 w-4 mr-2" />
-                  이미지 다운로드
-                </Button>
-                <Button variant="outline" onClick={handleGenerateShareLink}>
-                  {copySuccess ? (
-                    <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                  ) : (
-                    <Share2 className="h-4 w-4 mr-2" />
-                  )}
-                  {copySuccess ? '복사됨!' : '링크 공유'}
-                </Button>
-              </div>
-            </div>
-            
             <TransformWrapper
                 initialScale={1}
                 minScale={0.2}
@@ -385,43 +357,73 @@ export const EmergencyNetworkPage = () => {
                 limitToBounds={false}
                 centerOnInit
             >
-                <Controls />
-                <TransformComponent
-                    wrapperStyle={{ width: '100%', height: 'calc(100vh - 250px)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
-                    contentStyle={{ width: '100%', height: '100%' }}
-                >
-                    <div ref={orgChartRef} className="bg-white rounded-lg p-6 h-full w-full">
-                        <div className="text-center mb-8">
-                            <h2 className="text-3xl font-bold text-education-primary mb-2">
-                                {user?.user_metadata?.school_name || '학교'} 비상연락망
-                            </h2>
-                            <p className="text-education-neutral">
-                                생성일: {new Date().toLocaleDateString()}
-                            </p>
+                {({ zoomIn, zoomOut, resetTransform }) => (
+                    <>
+                        <div className="mb-6 print:hidden">
+                            <div className="flex flex-wrap gap-3 justify-between items-center">
+                                <div className="flex flex-wrap gap-3">
+                                    <Button onClick={handleSaveLayout} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">
+                                        <Save className="h-4 w-4 mr-2" />
+                                        {isLoading ? '저장 중...' : '레이아웃 저장'}
+                                    </Button>
+                                    <Button variant="outline" onClick={handlePrint}>
+                                        <Printer className="h-4 w-4 mr-2" />
+                                        인쇄
+                                    </Button>
+                                    <Button variant="outline" onClick={handleDownloadImage}>
+                                        <Download className="h-4 w-4 mr-2" />
+                                        이미지 다운로드
+                                    </Button>
+                                    <Button variant="outline" onClick={handleGenerateShareLink}>
+                                        {copySuccess ? <CheckCircle className="h-4 w-4 mr-2 text-green-500" /> : <Share2 className="h-4 w-4 mr-2" />}
+                                        {copySuccess ? '복사됨!' : '링크 공유'}
+                                    </Button>
+                                </div>
+                                <Controls
+                                    zoomIn={zoomIn}
+                                    zoomOut={zoomOut}
+                                    resetTransform={resetTransform}
+                                />
+                            </div>
                         </div>
+                        <TransformComponent
+                            wrapperStyle={{ width: '100%', height: 'calc(100vh - 250px)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
+                            contentStyle={{ width: '100%', height: '100%' }}
+                        >
+                            <div ref={orgChartRef} className="bg-white rounded-lg p-6 h-full w-full">
+                                <div className="text-center mb-8">
+                                    <h2 className="text-3xl font-bold text-education-primary mb-2">
+                                        {user?.user_metadata?.school_name || '학교'} 비상연락망
+                                    </h2>
+                                    <p className="text-education-neutral">
+                                        생성일: {new Date().toLocaleDateString()}
+                                    </p>
+                                </div>
 
-                        {organizationTree.length > 0 ? (
-                            <div className="flex justify-center items-center h-full">
-                                <ul className="org-tree inline-flex">
-                                    {organizationTree.map((node) => renderOrganizationNode(node))}
-                                </ul>
+                                {organizationTree.length > 0 ? (
+                                    <div className="flex justify-center items-center h-full">
+                                        <ul className="org-tree inline-flex">
+                                            {organizationTree.map((node) => renderOrganizationNode(node))}
+                                        </ul>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12">
+                                        <Users className="h-16 w-16 text-education-neutral/50 mx-auto mb-4" />
+                                        <h3 className="text-xl font-semibold text-education-neutral mb-2">
+                                            교직원 정보가 없습니다
+                                        </h3>
+                                        <p className="text-education-neutral/80 mb-6">
+                                            먼저 교직원 정보를 입력해주세요.
+                                        </p>
+                                        <Button onClick={() => navigate('/staff-input')} className="bg-gradient-primary hover:opacity-90">
+                                            교직원 정보 입력하기
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
-                        ) : (
-                            <div className="text-center py-12">
-                                <Users className="h-16 w-16 text-education-neutral/50 mx-auto mb-4" />
-                                <h3 className="text-xl font-semibold text-education-neutral mb-2">
-                                    교직원 정보가 없습니다
-                                </h3>
-                                <p className="text-education-neutral/80 mb-6">
-                                    먼저 교직원 정보를 입력해주세요.
-                                </p>
-                                <Button onClick={() => navigate('/staff-input')} className="bg-gradient-primary hover:opacity-90">
-                                    교직원 정보 입력하기
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-                </TransformComponent>
+                        </TransformComponent>
+                    </>
+                )}
             </TransformWrapper>
           </div>
 
