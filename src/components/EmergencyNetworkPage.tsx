@@ -198,35 +198,33 @@ export const EmergencyNetworkPage = () => {
       default: return 'bg-gray-100 text-gray-700';
     }
   }
-
-  const renderOrganizationNode = (node: OrganizationNode) => {
-    return (
-      <li key={node.id}>
-        <Card className={`shadow-md border-2 min-w-[200px] ${getNodeBgColor(node.staff.position)}`}>
-          <CardContent className="p-3 text-center">
-            <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${getNodeLabelColor(node.staff.position)}`}>
-              {POSITION_LABELS[node.staff.position]}
-            </div>
-            <h3 className={`font-bold text-sm mb-1 ${node.staff.position === 'principal' ? 'text-white' : 'text-gray-800'}`}>
-              {node.staff.name}
-            </h3>
-            <p className={`text-xs ${node.staff.position === 'principal' ? 'text-white/90' : 'text-gray-600'}`}>
-              {node.staff.department}
-            </p>
-            <p className={`text-xs mt-1 ${node.staff.position === 'principal' ? 'text-white/80' : 'text-gray-500'}`}>
-              {node.staff.contact}
-            </p>
-          </CardContent>
-        </Card>
-        
-        {node.children && node.children.length > 0 && (
-          <ul>
-            {node.children.map(child => renderOrganizationNode(child))}
-          </ul>
-        )}
-      </li>
-    )
-  }
+  
+  const renderOrganizationNode = (node: OrganizationNode) => (
+    <li key={node.id}>
+      <Card className={`node-card shadow-md border-2 min-w-[200px] ${getNodeBgColor(node.staff.position)}`}>
+        <CardContent className="p-3 text-center">
+          <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${getNodeLabelColor(node.staff.position)}`}>
+            {POSITION_LABELS[node.staff.position]}
+          </div>
+          <h3 className={`font-bold text-sm mb-1 ${node.staff.position === 'principal' ? 'text-white' : 'text-gray-800'}`}>
+            {node.staff.name}
+          </h3>
+          <p className={`text-xs ${node.staff.position === 'principal' ? 'text-white/90' : 'text-gray-600'}`}>
+            {node.staff.department}
+          </p>
+          <p className={`text-xs mt-1 ${node.staff.position === 'principal' ? 'text-white/80' : 'text-gray-500'}`}>
+            {node.staff.contact}
+          </p>
+        </CardContent>
+      </Card>
+      
+      {node.children && node.children.length > 0 && (
+        <ul>
+          {node.children.map(child => renderOrganizationNode(child))}
+        </ul>
+      )}
+    </li>
+  )
 
   const handleSaveLayout = async () => { /* ... */ };
   const handlePrint = () => { window.print() };
@@ -237,7 +235,26 @@ export const EmergencyNetworkPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-white shadow-soft border-b print:hidden">
-        {/* Header content... */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Network className="h-8 w-8 text-education-primary" />
+              <div>
+                <h1 className="text-2xl font-bold text-education-primary">비상연락망</h1>
+                <p className="text-education-neutral">계층형 조직도</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" onClick={() => navigate('/staff-input')}>
+                <Edit3 className="h-4 w-4 mr-2" />
+                직원 수정
+              </Button>
+              <Button variant="outline" onClick={handleLogout}>
+                로그아웃
+              </Button>
+            </div>
+          </div>
+        </div>
       </header>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -254,9 +271,26 @@ export const EmergencyNetworkPage = () => {
                     <>
                         <div className="mb-6 print:hidden">
                             <div className="flex flex-wrap gap-3 justify-between items-center">
+                                {/* ================== 여기부터 ================== */}
                                 <div className="flex flex-wrap gap-3">
-                                    {/* Action Buttons... */}
+                                    <Button onClick={handleSaveLayout} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">
+                                        <Save className="h-4 w-4 mr-2" />
+                                        {isLoading ? '저장 중...' : '레이아웃 저장'}
+                                    </Button>
+                                    <Button variant="outline" onClick={handlePrint}>
+                                        <Printer className="h-4 w-4 mr-2" />
+                                        인쇄
+                                    </Button>
+                                    <Button variant="outline" onClick={handleDownloadImage}>
+                                        <Download className="h-4 w-4 mr-2" />
+                                        이미지 다운로드
+                                    </Button>
+                                    <Button variant="outline" onClick={handleGenerateShareLink}>
+                                        {copySuccess ? <CheckCircle className="h-4 w-4 mr-2 text-green-500" /> : <Share2 className="h-4 w-4 mr-2" />}
+                                        {copySuccess ? '복사됨!' : '링크 공유'}
+                                    </Button>
                                 </div>
+                                {/* ================== 여기까지 ================== */}
                                 <Controls
                                     zoomIn={zoomIn}
                                     zoomOut={zoomOut}
@@ -280,14 +314,22 @@ export const EmergencyNetworkPage = () => {
 
                                 {organizationTree.length > 0 ? (
                                     <div className="flex justify-center items-center h-full">
-                                      {/* MODIFIED: The root is now the LI elements directly inside the org-chart container */}
-                                      <div className="org-chart">
+                                      <ul className="org-chart">
                                           {organizationTree.map((node) => renderOrganizationNode(node))}
-                                      </div>
+                                      </ul>
                                     </div>
                                 ) : (
                                     <div className="text-center py-12">
-                                        {/* ... Fallback content ... */}
+                                        <Users className="h-16 w-16 text-education-neutral/50 mx-auto mb-4" />
+                                        <h3 className="text-xl font-semibold text-education-neutral mb-2">
+                                            교직원 정보가 없습니다
+                                        </h3>
+                                        <p className="text-education-neutral/80 mb-6">
+                                            먼저 교직원 정보를 입력해주세요.
+                                        </p>
+                                        <Button onClick={() => navigate('/staff-input')} className="bg-gradient-primary hover:opacity-90">
+                                            교직원 정보 입력하기
+                                        </Button>
                                     </div>
                                 )}
                             </div>
@@ -296,15 +338,13 @@ export const EmergencyNetworkPage = () => {
                 )}
             </TransformWrapper>
           </div>
-
           <div className="lg:w-80 print:hidden">
-             {/* ... Right sidebar ... */}
+            {/* ... Right sidebar JSX remains unchanged ... */}
           </div>
         </div>
       </div>
-
       <style dangerouslySetInnerHTML={{ __html: `
-          @media print { /* ... Print styles ... */ }
+          @media print { /* ... Print styles remain unchanged ... */ }
       `}} />
     </div>
   )
