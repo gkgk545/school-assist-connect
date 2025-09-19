@@ -15,9 +15,14 @@ import {
   Edit3, 
   Users,
   Copy,
-  CheckCircle
+  CheckCircle,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw
 } from 'lucide-react'
 import html2canvas from 'html2canvas'
+import { TransformWrapper, TransformComponent, useControls } from "react-zoom-pan-pinch";
+
 
 interface StaffMember {
   id: string
@@ -31,7 +36,6 @@ interface OrganizationNode {
   id: string
   staff: StaffMember
   children: OrganizationNode[]
-  level: number
 }
 
 const POSITION_LABELS = {
@@ -41,12 +45,34 @@ const POSITION_LABELS = {
   staff: '부원'
 }
 
-const POSITION_ORDER = {
-  principal: 1,
-  vice_principal: 2,
-  department_head: 3,
-  staff: 4
+const getPositionOrder = (position: StaffMember['position']) => {
+  switch (position) {
+    case 'principal': return 1;
+    case 'vice_principal': return 2;
+    case 'department_head': return 3;
+    case 'staff': return 4;
+    default: return 5;
+  }
 }
+
+// Zoom Controls Component
+const Controls = () => {
+    const { zoomIn, zoomOut, resetTransform } = useControls();
+    return (
+        <div className="flex gap-2 p-2 rounded-md bg-white border shadow-md absolute top-4 left-4 z-10 print:hidden">
+            <Button variant="outline" size="icon" onClick={() => zoomIn()} aria-label="Zoom In">
+                <ZoomIn className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => zoomOut()} aria-label="Zoom Out">
+                <ZoomOut className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => resetTransform()} aria-label="Reset Zoom">
+                <RotateCcw className="h-4 w-4" />
+            </Button>
+        </div>
+    );
+};
+
 
 export const EmergencyNetworkPage = () => {
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
@@ -81,17 +107,21 @@ export const EmergencyNetworkPage = () => {
   }
 
   const loadStaffData = async (userId: string) => {
+    setIsLoading(true);
     try {
       const { data: staffData, error } = await supabase
         .from('staff')
         .select('*')
-        .eq('school_id', userId)
-        .order('created_at', { ascending: true })
+        .eq('school_id', userId);
 
       if (error) throw error
 
       if (staffData && staffData.length > 0) {
-        const formattedStaff = staffData.map(staff => ({
+        const sortedStaff = staffData.sort((a, b) => 
+          getPositionOrder(a.position as StaffMember['position']) - getPositionOrder(b.position as StaffMember['position'])
+        );
+
+        const formattedStaff = sortedStaff.map(staff => ({
           id: staff.id,
           name: staff.name,
           department: staff.department,
@@ -100,7 +130,6 @@ export const EmergencyNetworkPage = () => {
         }))
         setStaffMembers(formattedStaff)
       } else {
-        // No staff data, redirect to input page
         navigate('/staff-input')
       }
     } catch (error: any) {
@@ -110,154 +139,51 @@ export const EmergencyNetworkPage = () => {
         description: "교직원 데이터를 불러올 수 없습니다.",
         variant: "destructive",
       })
+    } finally {
+        setIsLoading(false);
     }
   }
 
   const generateOrganizationTree = () => {
-    // Group staff by position and department
-    const principalStaff = staffMembers.filter(s => s.position === 'principal')
-    const vicePrincipalStaff = staffMembers.filter(s => s.position === 'vice_principal')
-    const departmentHeads = staffMembers.filter(s => s.position === 'department_head')
-    const regularStaff = staffMembers.filter(s => s.position === 'staff')
+    const members = [...staffMembers];
+    const principal = members.find(s => s.position === 'principal');
+    const vicePrincipals = members.filter(s => s.position === 'vice_principal');
+    const departmentHeads = members.filter(s => s.position === 'department_head');
+    const staff = members.filter(s => s.position === 'staff');
 
-    // Create tree structure
-    const tree: OrganizationNode[] = []
+    const buildNode = (member: StaffMember): OrganizationNode => ({
+      id: member.id,
+      staff: member,
+      children: [],
+    });
 
-    // Level 1: Principal
-    principalStaff.forEach(principal => {
-      const principalNode: OrganizationNode = {
-        id: principal.id,
-        staff: principal,
-        children: [],
-        level: 1
-      }
+    const headNodes = departmentHeads.map(dh => {
+      const node = buildNode(dh);
+      node.children = staff
+        .filter(s => s.department === dh.department)
+        .map(buildNode);
+      return node;
+    });
 
-      // Level 2: Vice Principals under this principal
-      vicePrincipalStaff.forEach(vp => {
-        const vpNode: OrganizationNode = {
-          id: vp.id,
-          staff: vp,
-          children: [],
-          level: 2
-        }
+    const vicePrincipalNodes = vicePrincipals.map(vp => {
+      const node = buildNode(vp);
+      node.children = [...headNodes];
+      return node;
+    });
 
-        // Level 3: Department Heads under vice principals
-        departmentHeads.forEach(dh => {
-          const dhNode: OrganizationNode = {
-            id: dh.id,
-            staff: dh,
-            children: [],
-            level: 3
-          }
-
-          // Level 4: Staff under department heads (same department)
-          const departmentStaff = regularStaff.filter(s => s.department === dh.department)
-          departmentStaff.forEach(staff => {
-            dhNode.children.push({
-              id: staff.id,
-              staff: staff,
-              children: [],
-              level: 4
-            })
-          })
-
-          vpNode.children.push(dhNode)
-        })
-
-        // Add staff without department heads directly under VP
-        const staffWithoutHeads = regularStaff.filter(s => 
-          !departmentHeads.some(dh => dh.department === s.department)
-        )
-        staffWithoutHeads.forEach(staff => {
-          vpNode.children.push({
-            id: staff.id,
-            staff: staff,
-            children: [],
-            level: 3
-          })
-        })
-
-        principalNode.children.push(vpNode)
-      })
-
-      // If no vice principals, add department heads directly under principal
-      if (vicePrincipalStaff.length === 0) {
-        departmentHeads.forEach(dh => {
-          const dhNode: OrganizationNode = {
-            id: dh.id,
-            staff: dh,
-            children: [],
-            level: 2
-          }
-
-          const departmentStaff = regularStaff.filter(s => s.department === dh.department)
-          departmentStaff.forEach(staff => {
-            dhNode.children.push({
-              id: staff.id,
-              staff: staff,
-              children: [],
-              level: 3
-            })
-          })
-
-          principalNode.children.push(dhNode)
-        })
-
-        // Add staff without department heads directly under principal
-        const staffWithoutHeads = regularStaff.filter(s => 
-          !departmentHeads.some(dh => dh.department === s.department)
-        )
-        staffWithoutHeads.forEach(staff => {
-          principalNode.children.push({
-            id: staff.id,
-            staff: staff,
-            children: [],
-            level: 2
-          })
-        })
-      }
-
-      tree.push(principalNode)
-    })
-
-    // If no principal, start with vice principals
-    if (principalStaff.length === 0 && vicePrincipalStaff.length > 0) {
-      vicePrincipalStaff.forEach(vp => {
-        const vpNode: OrganizationNode = {
-          id: vp.id,
-          staff: vp,
-          children: [],
-          level: 1
-        }
-
-        departmentHeads.forEach(dh => {
-          const dhNode: OrganizationNode = {
-            id: dh.id,
-            staff: dh,
-            children: [],
-            level: 2
-          }
-
-          const departmentStaff = regularStaff.filter(s => s.department === dh.department)
-          departmentStaff.forEach(staff => {
-            dhNode.children.push({
-              id: staff.id,
-              staff: staff,
-              children: [],
-              level: 3
-            })
-          })
-
-          vpNode.children.push(dhNode)
-        })
-
-        tree.push(vpNode)
-      })
+    let tree: OrganizationNode[] = [];
+    if (principal) {
+      const principalNode = buildNode(principal);
+      principalNode.children = vicePrincipalNodes.length > 0 ? vicePrincipalNodes : headNodes;
+      tree = [principalNode];
+    } else if (vicePrincipals.length > 0) {
+      tree = vicePrincipalNodes;
+    } else {
+      tree = headNodes;
     }
-
-    setOrganizationTree(tree)
-  }
-
+    
+    setOrganizationTree(tree);
+  };
 
   const handleSaveLayout = async () => {
     setIsLoading(true)
@@ -324,12 +250,10 @@ export const EmergencyNetworkPage = () => {
 
   const handleGenerateShareLink = async () => {
     try {
-      // Generate a shareable URL (simplified version)
       const shareId = Math.random().toString(36).substr(2, 9)
       const url = `${window.location.origin}/share/${shareId}`
       setShareUrl(url)
 
-      // Copy to clipboard
       await navigator.clipboard.writeText(url)
       setCopySuccess(true)
       setTimeout(() => setCopySuccess(false), 2000)
@@ -351,86 +275,50 @@ export const EmergencyNetworkPage = () => {
     await supabase.auth.signOut()
     navigate('/')
   }
+  
+  const getNodeBgColor = (position: StaffMember['position']) => {
+    switch(position) {
+      case 'principal': return 'bg-gradient-primary text-white border-blue-500';
+      case 'vice_principal': return 'bg-blue-50 border-blue-300';
+      case 'department_head': return 'bg-green-50 border-green-300';
+      default: return 'bg-gray-50 border-gray-300';
+    }
+  };
+
+  const getNodeLabelColor = (position: StaffMember['position']) => {
+     switch(position) {
+      case 'principal': return 'bg-white/20 text-white';
+      case 'vice_principal': return 'bg-blue-100 text-blue-700';
+      case 'department_head': return 'bg-green-100 text-green-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  }
 
   const renderOrganizationNode = (node: OrganizationNode) => (
-    <div key={node.id} className="flex flex-col items-center">
-      {/* Staff Member Box */}
-      <div className="relative">
-        <Card className={`shadow-medium border-2 transition-all hover:shadow-lg min-w-[200px] ${
-          node.level === 1 ? 'bg-gradient-primary text-white border-blue-500' :
-          node.level === 2 ? 'bg-blue-50 border-blue-300' :
-          node.level === 3 ? 'bg-green-50 border-green-300' :
-          'bg-gray-50 border-gray-300'
-        }`}>
+    <li key={node.id}>
+        <Card className={`shadow-medium border-2 transition-all hover:shadow-lg min-w-[200px] inline-block ${getNodeBgColor(node.staff.position)}`}>
           <CardContent className="p-3 text-center">
-            <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${
-              node.level === 1 ? 'bg-white/20 text-white' :
-              node.level === 2 ? 'bg-blue-100 text-blue-700' :
-              node.level === 3 ? 'bg-green-100 text-green-700' :
-              'bg-gray-100 text-gray-700'
-            }`}>
+            <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${getNodeLabelColor(node.staff.position)}`}>
               {POSITION_LABELS[node.staff.position]}
             </div>
-            <h3 className={`font-bold text-sm mb-1 ${
-              node.level === 1 ? 'text-white' : 'text-gray-800'
-            }`}>
+            <h3 className={`font-bold text-sm mb-1 ${node.staff.position === 'principal' ? 'text-white' : 'text-gray-800'}`}>
               {node.staff.name}
             </h3>
-            <p className={`text-xs ${
-              node.level === 1 ? 'text-white/90' : 'text-gray-600'
-            }`}>
+            <p className={`text-xs ${node.staff.position === 'principal' ? 'text-white/90' : 'text-gray-600'}`}>
               {node.staff.department}
             </p>
-            <p className={`text-xs mt-1 ${
-              node.level === 1 ? 'text-white/80' : 'text-gray-500'
-            }`}>
+            <p className={`text-xs mt-1 ${node.staff.position === 'principal' ? 'text-white/80' : 'text-gray-500'}`}>
               {node.staff.contact}
             </p>
           </CardContent>
         </Card>
         
-        {/* Connecting line downward */}
-        {node.children.length > 0 && (
-          <div className="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-8 bg-gray-400 top-full"></div>
+        {node.children && node.children.length > 0 && (
+          <ul>
+            {node.children.map(child => renderOrganizationNode(child))}
+          </ul>
         )}
-      </div>
-      
-      {/* Children */}
-      {node.children.length > 0 && (
-        <div className="mt-8 flex flex-col items-center">
-          {/* Horizontal line for multiple children */}
-          {node.children.length > 1 && (
-            <div className="relative flex items-center justify-center w-full mb-8">
-              <div className="h-0.5 bg-gray-400 w-full absolute top-0"></div>
-              {node.children.map((_, index) => (
-                <div 
-                  key={index}
-                  className="w-0.5 h-8 bg-gray-400 absolute top-0"
-                  style={{
-                    left: `${(100 / (node.children.length + 1)) * (index + 1)}%`,
-                    transform: 'translateX(-50%)'
-                  }}
-                ></div>
-              ))}
-            </div>
-          )}
-          
-          {/* Single child - just a vertical line */}
-          {node.children.length === 1 && (
-            <div className="w-0.5 h-8 bg-gray-400 mb-0"></div>
-          )}
-          
-          {/* Children nodes */}
-          <div className={`flex gap-12 items-start ${
-            node.children.length > 1 ? 'justify-center' : ''
-          }`}>
-            {node.children.map((child) => 
-              renderOrganizationNode(child)
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+      </li>
   )
 
   return (
@@ -460,8 +348,8 @@ export const EmergencyNetworkPage = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          <div className="flex-1">
-            <div className="mb-6 print:hidden">
+          <div className="flex-1 relative">
+             <div className="mb-6 print:hidden">
               <div className="flex flex-wrap gap-3">
                 <Button onClick={handleSaveLayout} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">
                   <Save className="h-4 w-4 mr-2" />
@@ -485,42 +373,52 @@ export const EmergencyNetworkPage = () => {
                 </Button>
               </div>
             </div>
+            
+            <TransformWrapper
+                initialScale={1}
+                minScale={0.2}
+                maxScale={3}
+                limitToBounds={false}
+                centerOnInit
+            >
+                <Controls />
+                <TransformComponent
+                    wrapperStyle={{ width: '100%', height: 'calc(100vh - 250px)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
+                    contentStyle={{ width: '100%', height: '100%' }}
+                >
+                    <div ref={orgChartRef} className="bg-white rounded-lg p-6 h-full w-full">
+                        <div className="text-center mb-8">
+                            <h2 className="text-3xl font-bold text-education-primary mb-2">
+                                {user?.user_metadata?.school_name || '학교'} 비상연락망
+                            </h2>
+                            <p className="text-education-neutral">
+                                생성일: {new Date().toLocaleDateString()}
+                            </p>
+                        </div>
 
-            <div ref={orgChartRef} className="bg-white rounded-lg shadow-soft p-6">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-education-primary mb-2">
-                  {user?.user_metadata?.school_name || '학교'} 비상연락망
-                </h2>
-                <p className="text-education-neutral">
-                  생성일: {new Date().toLocaleDateString()}
-                </p>
-              </div>
-
-              {organizationTree.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <div className="min-w-max py-8">
-                    <div className="flex flex-col items-center space-y-16">
-                      {organizationTree.map((node) => 
-                        renderOrganizationNode(node)
-                      )}
+                        {organizationTree.length > 0 ? (
+                            <div className="flex justify-center items-center h-full">
+                                <ul className="org-tree inline-flex">
+                                    {organizationTree.map((node) => renderOrganizationNode(node))}
+                                </ul>
+                            </div>
+                        ) : (
+                            <div className="text-center py-12">
+                                <Users className="h-16 w-16 text-education-neutral/50 mx-auto mb-4" />
+                                <h3 className="text-xl font-semibold text-education-neutral mb-2">
+                                    교직원 정보가 없습니다
+                                </h3>
+                                <p className="text-education-neutral/80 mb-6">
+                                    먼저 교직원 정보를 입력해주세요.
+                                </p>
+                                <Button onClick={() => navigate('/staff-input')} className="bg-gradient-primary hover:opacity-90">
+                                    교직원 정보 입력하기
+                                </Button>
+                            </div>
+                        )}
                     </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Users className="h-16 w-16 text-education-neutral/50 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-education-neutral mb-2">
-                    교직원 정보가 없습니다
-                  </h3>
-                  <p className="text-education-neutral/80 mb-6">
-                    먼저 교직원 정보를 입력해주세요.
-                  </p>
-                  <Button onClick={() => navigate('/staff-input')} className="bg-gradient-primary hover:opacity-90">
-                    교직원 정보 입력하기
-                  </Button>
-                </div>
-              )}
-            </div>
+                </TransformComponent>
+            </TransformWrapper>
           </div>
 
           <div className="lg:w-80 print:hidden">
@@ -530,19 +428,15 @@ export const EmergencyNetworkPage = () => {
                 <div className="space-y-3 text-sm text-education-neutral">
                    <div className="flex items-start space-x-2">
                      <div className="w-2 h-2 bg-education-primary rounded-full mt-2 flex-shrink-0"></div>
-                     <p>계층형 조직도로 구조를 명확하게 확인할 수 있습니다.</p>
+                     <p>마우스 휠 또는 컨트롤 버튼으로 조직도를 확대/축소할 수 있습니다.</p>
                    </div>
-                  <div className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-education-secondary rounded-full mt-2 flex-shrink-0"></div>
-                    <p>변경 후 '레이아웃 저장' 버튼을 눌러 저장하세요.</p>
-                  </div>
+                   <div className="flex items-start space-x-2">
+                     <div className="w-2 h-2 bg-education-secondary rounded-full mt-2 flex-shrink-0"></div>
+                     <p>마우스로 드래그하여 조직도를 이동할 수 있습니다.</p>
+                   </div>
                   <div className="flex items-start space-x-2">
                     <div className="w-2 h-2 bg-education-primary rounded-full mt-2 flex-shrink-0"></div>
                     <p>인쇄 또는 이미지로 다운로드할 수 있습니다.</p>
-                  </div>
-                  <div className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-education-secondary rounded-full mt-2 flex-shrink-0"></div>
-                    <p>'링크 공유'로 다른 사람과 공유할 수 있습니다.</p>
                   </div>
                 </div>
               </CardContent>
@@ -574,7 +468,7 @@ export const EmergencyNetworkPage = () => {
           @media print {
             @page {
               margin: 1cm;
-              size: A4;
+              size: A4 landscape;
             }
             
             .print\\:hidden {
@@ -583,6 +477,11 @@ export const EmergencyNetworkPage = () => {
             
             body {
               background: white !important;
+            }
+
+            .org-tree {
+                transform: scale(0.7); /* Adjust scale for printing */
+                transform-origin: top left;
             }
           }
         `
