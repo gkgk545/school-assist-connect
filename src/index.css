@@ -175,7 +175,7 @@ All colors MUST be HSL.
 }
 
 /* 부모에서 자식 그룹으로 내려오는 수직선 */
-.org-chart li ul::before {
+.org-chart ul::before {
   content: '';
   position: absolute;
   top: -20px;
@@ -184,6 +184,16 @@ All colors MUST be HSL.
   width: 0;
   height: 20px;
   z-index: 1;
+}
+
+/* 자식을 가진 노드 아래로 추가 수직선 */
+.org-chart li ul {
+  margin-top: 20px;
+}
+
+.org-chart li ul::before {
+  top: -40px;
+  height: 40px;
 }
 
 /* 첫 번째 자식의 수평선은 가운데부터 시작 */
