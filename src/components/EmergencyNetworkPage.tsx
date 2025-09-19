@@ -91,7 +91,14 @@ export const EmergencyNetworkPage = () => {
       if (error) throw error
 
       if (staffData && staffData.length > 0) {
-        setStaffMembers(staffData)
+        const formattedStaff = staffData.map(staff => ({
+          id: staff.id,
+          name: staff.name,
+          department: staff.department,
+          position: staff.position as 'principal' | 'vice_principal' | 'department_head' | 'staff',
+          contact: staff.contact
+        }))
+        setStaffMembers(formattedStaff)
       } else {
         // No staff data, redirect to input page
         navigate('/staff-input')
@@ -278,8 +285,7 @@ export const EmergencyNetworkPage = () => {
         .from('organization_layouts')
         .upsert({
           school_id: user.id,
-          layout_data: layoutData,
-          updated_at: new Date().toISOString()
+          layout_data: layoutData as any
         })
 
       if (error) throw error

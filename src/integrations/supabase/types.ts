@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      organization_layouts: {
+        Row: {
+          created_at: string
+          id: string
+          layout_data: Json
+          school_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          layout_data: Json
+          school_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          layout_data?: Json
+          school_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      staff: {
+        Row: {
+          contact: string
+          created_at: string
+          department: string
+          id: string
+          name: string
+          position: string
+          school_id: string
+          updated_at: string
+        }
+        Insert: {
+          contact: string
+          created_at?: string
+          department: string
+          id?: string
+          name: string
+          position: string
+          school_id: string
+          updated_at?: string
+        }
+        Update: {
+          contact?: string
+          created_at?: string
+          department?: string
+          id?: string
+          name?: string
+          position?: string
+          school_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
