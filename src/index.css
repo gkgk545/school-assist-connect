@@ -120,77 +120,80 @@ All colors MUST be HSL.
   }
 }
 
-/* Add this to the end of src/index.css */
 .org-tree {
-  display: inline-flex;
-  justify-content: center;
+  /* 조직도 전체를 감싸는 컨테이너 */
+  text-align: center;
+  display: inline-block;
 }
 
 .org-tree ul {
+  /* 자식 노드 그룹 */
   display: flex;
-  justify-content: center;
   position: relative;
+  padding-top: 20px;
 }
 
 .org-tree li {
+  /* 개별 노드 */
   display: flex;
   flex-direction: column;
-  align-items: center;
+  flex: 1;
   position: relative;
-  padding: 2rem 1rem 0 1rem; /* 상단에 연결선을 위한 공간 확보 */
+  padding: 0 10px;
 }
 
-/* 수평선 (형제 노드 연결) */
+/* 자식 노드로 이어지는 연결선 그리기 (핵심) */
+.org-tree li::before,
 .org-tree li::after {
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
-  height: 1.5px;
-  background-color: #9ca3af; /* gray-400 */
-}
-
-/* 수직선 (카드와 수평선 연결) */
-.org-tree li::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 1.5px;
-  height: 2rem; /* li의 padding-top과 동일한 값 */
-  background-color: #9ca3af; /* gray-400 */
-  transform: translateX(-50%);
-}
-
-/* 최상위 노드의 연결선은 숨김 */
-.org-tree > li::before, .org-tree > li::after {
-  display: none;
-}
-
-/* 자식이 하나일 경우 수평선 숨김 */
-.org-tree li:only-child::after {
-  display: none;
-}
-
-/* 첫 번째 자식의 수평선은 오른쪽 절반만 표시 */
-.org-tree li:first-child:not(:only-child)::after {
-  left: 50%;
-}
-
-/* 마지막 자식의 수평선은 왼쪽 절반만 표시 */
-.org-tree li:last-child:not(:only-child)::after {
   right: 50%;
+  border-top: 1.5px solid #cbd5e1; /* gray-300 */
+  width: 50%;
+  height: 20px;
 }
 
-/* 부모 카드에서 자식 ul로 내려가는 수직선 - 자식이 있을 때만 표시 */
-.has-children > .card-wrapper::after {
+.org-tree li::after {
+  right: auto;
+  left: 50%;
+  border-left: 1.5px solid #cbd5e1; /* gray-300 */
+}
+
+/* 첫 번째, 마지막, 단일 자식 노드의 선 모양 조정 */
+.org-tree li:only-child::after,
+.org-tree li:only-child::before {
+  display: none;
+}
+
+.org-tree li:first-child::before,
+.org-tree li:last-child::after {
+  border: 0 none;
+}
+
+.org-tree li:last-child::before {
+  border-right: 1.5px solid #cbd5e1; /* gray-300 */
+  border-radius: 0 5px 0 0;
+}
+
+.org-tree li:first-child::after {
+  border-radius: 5px 0 0 0;
+}
+
+/* 부모에서 자식 그룹으로 내려오는 수직선 */
+.org-tree ul ul::before {
   content: '';
   position: absolute;
-  bottom: 0;
+  top: -20px;
   left: 50%;
-  width: 1.5px;
-  height: 2rem; /* li의 padding-top과 동일한 값 */
-  background-color: #9ca3af;
-  transform: translateX(-50%) translateY(100%);
+  border-left: 1.5px solid #cbd5e1; /* gray-300 */
+  width: 0;
+  height: 20px;
+}
+
+/* 카드와 연결선을 자연스럽게 잇기 위한 스타일 */
+.org-tree .card-wrapper {
+  display: inline-block;
+  padding-top: 20px;
+  margin-top: -20px;
 }
