@@ -69,7 +69,7 @@ export const EmergencyNetworkPage = () => {
   const [organizationTree, setOrganizationTree] = useState<OrganizationNode[]>([])
   const [user, setUser] = useState<any>(null)
   const orgChartRef = useRef<HTMLDivElement>(null)
-  const transformControlsRef = useRef<{ resetTransform: () => void } | null>(null);
+  const transformWrapperRef = useRef<any>(null);
   
   const { toast } = useToast()
   const navigate = useNavigate()
@@ -150,20 +150,14 @@ export const EmergencyNetworkPage = () => {
 
   const handleDownloadImage = async () => {
     const element = orgChartRef.current;
-    if (!element || !transformControlsRef.current?.resetTransform) return;
-  
-    const { resetTransform } = transformControlsRef.current;
+    if (!element || !transformWrapperRef.current) return;
+
+    const { resetTransform } = transformWrapperRef.current;
     
+    // 캡처 전에 화면을 초기 상태로 리셋
     resetTransform();
   
-    const titleElement = element.querySelector('.org-title') as HTMLElement | null;
-    const subtitleElement = element.querySelector('.org-subtitle') as HTMLElement | null;
-    const originalTitleStyle = titleElement ? titleElement.style.cssText : '';
-    const originalSubtitleStyle = subtitleElement ? subtitleElement.style.cssText : '';
-  
-    if (titleElement) titleElement.style.transform = 'scale(1)';
-    if (subtitleElement) subtitleElement.style.transform = 'scale(1)';
-  
+    // DOM 업데이트를 기다리기 위한 짧은 지연
     setTimeout(async () => {
       try {
         const canvas = await html2canvas(element, {
@@ -183,9 +177,6 @@ export const EmergencyNetworkPage = () => {
           description: "이미지를 생성하는 중 오류가 발생했습니다.",
           variant: "destructive",
         });
-      } finally {
-        if (titleElement) titleElement.style.cssText = originalTitleStyle;
-        if (subtitleElement) subtitleElement.style.cssText = originalSubtitleStyle;
       }
     }, 100);
   };
@@ -263,10 +254,8 @@ export const EmergencyNetworkPage = () => {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex-1 relative">
-          <TransformWrapper initialScale={0.8} minScale={0.1} maxScale={3} limitToBounds={false} centerOnInit>
-            {(props) => {
-              transformControlsRef.current = { resetTransform: props.resetTransform };
-              return (
+          <TransformWrapper ref={transformWrapperRef} initialScale={0.8} minScale={0.1} maxScale={3} limitToBounds={false} centerOnInit>
+            {({ zoomIn, zoomOut, resetTransform }) => (
                 <>
                   <div className="mb-6 print:hidden">
                     <div className="flex flex-wrap gap-3 justify-between items-center">
@@ -274,7 +263,7 @@ export const EmergencyNetworkPage = () => {
                           <Button variant="outline" onClick={handlePrint}> <Printer className="h-4 w-4 mr-2" /> 인쇄 </Button>
                           <Button variant="outline" onClick={handleDownloadImage}> <Download className="h-4 w-4 mr-2" /> 이미지 다운로드 </Button>
                       </div>
-                      <Controls {...props} />
+                      <Controls zoomIn={zoomIn} zoomOut={zoomOut} resetTransform={resetTransform} />
                     </div>
                   </div>
                   <TransformComponent wrapperStyle={{ width: '100%', height: 'calc(100vh - 250px)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}>
@@ -300,8 +289,7 @@ export const EmergencyNetworkPage = () => {
                     </div>
                   </TransformComponent>
                 </>
-              );
-            }}
+              )}
           </TransformWrapper>
           <p className="text-center text-sm text-muted-foreground mt-2 print:hidden">(조직도를 마우스로 드래그하여 이동할 수 있습니다)</p>
         </div>
