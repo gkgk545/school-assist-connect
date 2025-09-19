@@ -296,25 +296,29 @@ export const EmergencyNetworkPage = () => {
 
   const renderOrganizationNode = (node: OrganizationNode) => (
     <li key={node.id}>
-        <Card className={`shadow-medium border-2 transition-all hover:shadow-lg min-w-[200px] inline-block ${getNodeBgColor(node.staff.position)}`}>
-          <CardContent className="p-3 text-center">
-            <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${getNodeLabelColor(node.staff.position)}`}>
-              {POSITION_LABELS[node.staff.position]}
-            </div>
-            <h3 className={`font-bold text-sm mb-1 ${node.staff.position === 'principal' ? 'text-white' : 'text-gray-800'}`}>
-              {node.staff.name}
-            </h3>
-            <p className={`text-xs ${node.staff.position === 'principal' ? 'text-white/90' : 'text-gray-600'}`}>
-              {node.staff.department}
-            </p>
-            <p className={`text-xs mt-1 ${node.staff.position === 'principal' ? 'text-white/80' : 'text-gray-500'}`}>
-              {node.staff.contact}
-            </p>
-          </CardContent>
-        </Card>
+        {/* 이 div를 추가해주세요 */}
+        <div className="card-wrapper relative">
+            <Card className={`shadow-medium border-2 transition-all hover:shadow-lg min-w-[200px] inline-block ${getNodeBgColor(node.staff.position)}`}>
+              <CardContent className="p-3 text-center">
+                <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${getNodeLabelColor(node.staff.position)}`}>
+                  {POSITION_LABELS[node.staff.position]}
+                </div>
+                <h3 className={`font-bold text-sm mb-1 ${node.staff.position === 'principal' ? 'text-white' : 'text-gray-800'}`}>
+                  {node.staff.name}
+                </h3>
+                <p className={`text-xs ${node.staff.position === 'principal' ? 'text-white/90' : 'text-gray-600'}`}>
+                  {node.staff.department}
+                </p>
+                <p className={`text-xs mt-1 ${node.staff.position === 'principal' ? 'text-white/80' : 'text-gray-500'}`}>
+                  {node.staff.contact}
+                </p>
+              </CardContent>
+            </Card>
+        </div>
         
         {node.children && node.children.length > 0 && (
-          <ul>
+          // 이 ul에 있던 mt-8 클래스는 CSS에서 처리하므로 삭제합니다.
+          <ul> 
             {node.children.map(child => renderOrganizationNode(child))}
           </ul>
         )}
