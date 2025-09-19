@@ -120,45 +120,43 @@ All colors MUST be HSL.
   }
 }
 
+/* src/index.css 파일의 조직도 관련 스타일을 모두 지우고 아래 코드로 교체하세요. */
+
 .org-chart {
-  /* 전체 조직도를 감싸는 컨테이너 */
-  display: flex;
-  justify-content: center;
-}
-
-.org-chart ul {
-  /* 자식 노드 그룹 */
-  display: flex;
-  position: relative;
-}
-
-.org-chart li {
-  /* 개별 노드 */
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
-  padding: 1rem; /* 노드 간 가로 간격 */
 }
 
 .org-chart .node-card {
-  /* 직원 정보 카드 */
-  margin-top: 1.5rem; /* 카드 위 연결선 공간 */
+  position: relative;
+  display: inline-block;
 }
 
-/* 카드와 부모의 가로선을 잇는 수직선 */
-.org-chart li::before {
+/* 부모 노드에서 아래로 내려오는 수직선 */
+.org-chart .node-card.has-children::after {
   content: '';
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, 100%);
   width: 2px;
-  height: 1.5rem; /* 카드의 margin-top과 동일한 값 */
+  height: 1.5rem; /* 부모-자식 간 간격 */
   background-color: #cbd5e1; /* gray-300 */
 }
 
-/* 형제 노드를 연결하는 수평선 */
+.org-chart ul {
+  display: flex;
+  position: relative;
+  padding-top: 1.5rem; /* 부모-자식 간 간격 */
+}
+
+.org-chart li {
+  position: relative;
+  padding: 0 1rem; /* 형제 노드 간 간격 */
+}
+
+/* 자식 노드들을 연결하는 수평선 */
 .org-chart li::after {
   content: '';
   position: absolute;
@@ -169,34 +167,26 @@ All colors MUST be HSL.
   background-color: #cbd5e1; /* gray-300 */
 }
 
-/* 최상위 노드의 연결선은 그리지 않음 */
-.org-chart > li::before,
-.org-chart > li::after {
-  display: none;
-}
-
-/* 부모 노드와 자식 그룹을 잇는 수직선 */
-.org-chart ul::before {
+/* 수평선에서 각 자식 노드로 내려오는 수직선 */
+.org-chart li::before {
   content: '';
   position: absolute;
-  top: -1.5rem; /* 카드 아래로 연결되도록 */
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
   width: 2px;
-  height: 1.5rem;
+  height: 1.5rem; /* ul의 padding-top과 동일한 값 */
   background-color: #cbd5e1; /* gray-300 */
 }
 
 /* 첫 번째 자식의 수평선은 오른쪽 절반만 표시 */
 .org-chart li:first-child:not(:only-child)::after {
   left: 50%;
-  width: 50%;
 }
 
 /* 마지막 자식의 수평선은 왼쪽 절반만 표시 */
 .org-chart li:last-child:not(:only-child)::after {
   right: 50%;
-  width: 50%;
 }
 
 /* 자식이 하나일 경우 수평선을 그리지 않음 */
