@@ -59,7 +59,7 @@ const getPositionOrder = (position: StaffMember['position']) => {
 const Controls = () => {
     const { zoomIn, zoomOut, resetTransform } = useControls();
     return (
-        <div className="flex gap-2 p-2 rounded-md bg-white border shadow-md absolute top-4 left-4 z-10 print:hidden">
+        <div className="flex gap-2 p-2 rounded-md bg-white border shadow-md absolute top-4 right-4 z-10 print:hidden">
             <Button variant="outline" size="icon" onClick={() => zoomIn()} aria-label="Zoom In">
                 <ZoomIn className="h-4 w-4" />
             </Button>
