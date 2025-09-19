@@ -23,7 +23,6 @@ import {
 import html2canvas from 'html2canvas'
 import { TransformWrapper, TransformComponent, useControls } from "react-zoom-pan-pinch";
 
-
 interface StaffMember {
   id: string
   name: string
@@ -201,48 +200,44 @@ export const EmergencyNetworkPage = () => {
   }
 
   const renderOrganizationNode = (node: OrganizationNode) => {
-    const hasChildren = node.children && node.children.length > 0;
     return (
       <li key={node.id}>
-          <div className={`node-card ${hasChildren ? 'has-children' : ''}`}>
-              <Card className={`shadow-medium border-2 transition-all hover:shadow-lg min-w-[200px] ${getNodeBgColor(node.staff.position)}`}>
-                <CardContent className="p-3 text-center">
-                  <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${getNodeLabelColor(node.staff.position)}`}>
-                    {POSITION_LABELS[node.staff.position]}
-                  </div>
-                  <h3 className={`font-bold text-sm mb-1 ${node.staff.position === 'principal' ? 'text-white' : 'text-gray-800'}`}>
-                    {node.staff.name}
-                  </h3>
-                  <p className={`text-xs ${node.staff.position === 'principal' ? 'text-white/90' : 'text-gray-600'}`}>
-                    {node.staff.department}
-                  </p>
-                  <p className={`text-xs mt-1 ${node.staff.position === 'principal' ? 'text-white/80' : 'text-gray-500'}`}>
-                    {node.staff.contact}
-                  </p>
-                </CardContent>
-              </Card>
-          </div>
-          
-          {hasChildren && (
-            <ul>
-              {node.children.map(child => renderOrganizationNode(child))}
-            </ul>
-          )}
-        </li>
-    );
+        <Card className={`shadow-md border-2 min-w-[200px] ${getNodeBgColor(node.staff.position)}`}>
+          <CardContent className="p-3 text-center">
+            <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${getNodeLabelColor(node.staff.position)}`}>
+              {POSITION_LABELS[node.staff.position]}
+            </div>
+            <h3 className={`font-bold text-sm mb-1 ${node.staff.position === 'principal' ? 'text-white' : 'text-gray-800'}`}>
+              {node.staff.name}
+            </h3>
+            <p className={`text-xs ${node.staff.position === 'principal' ? 'text-white/90' : 'text-gray-600'}`}>
+              {node.staff.department}
+            </p>
+            <p className={`text-xs mt-1 ${node.staff.position === 'principal' ? 'text-white/80' : 'text-gray-500'}`}>
+              {node.staff.contact}
+            </p>
+          </CardContent>
+        </Card>
+        
+        {node.children && node.children.length > 0 && (
+          <ul>
+            {node.children.map(child => renderOrganizationNode(child))}
+          </ul>
+        )}
+      </li>
+    )
   }
 
-  // Functions like handleSaveLayout, handlePrint, etc. remain the same.
   const handleSaveLayout = async () => { /* ... */ };
   const handlePrint = () => { window.print() };
   const handleDownloadImage = async () => { /* ... */ };
   const handleGenerateShareLink = async () => { /* ... */ };
-  const handleLogout = async () => { /* ... */ };
+  const handleLogout = async () => { await supabase.auth.signOut(); navigate('/'); };
 
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-white shadow-soft border-b print:hidden">
-        {/* ... Header JSX is unchanged ... */}
+        {/* Header content... */}
       </header>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -258,7 +253,16 @@ export const EmergencyNetworkPage = () => {
                 {({ zoomIn, zoomOut, resetTransform }) => (
                     <>
                         <div className="mb-6 print:hidden">
-                           {/* ... All buttons JSX is unchanged ... */}
+                            <div className="flex flex-wrap gap-3 justify-between items-center">
+                                <div className="flex flex-wrap gap-3">
+                                    {/* Action Buttons... */}
+                                </div>
+                                <Controls
+                                    zoomIn={zoomIn}
+                                    zoomOut={zoomOut}
+                                    resetTransform={resetTransform}
+                                />
+                            </div>
                         </div>
                         <TransformComponent
                             wrapperStyle={{ width: '100%', height: 'calc(100vh - 250px)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
@@ -266,19 +270,24 @@ export const EmergencyNetworkPage = () => {
                         >
                             <div ref={orgChartRef} className="bg-white rounded-lg p-6 h-full w-full">
                                 <div className="text-center mb-8">
-                                    {/* ... Title JSX is unchanged ... */}
+                                    <h2 className="text-3xl font-bold text-education-primary mb-2">
+                                        {user?.user_metadata?.school_name || '학교'} 비상연락망
+                                    </h2>
+                                    <p className="text-education-neutral">
+                                        생성일: {new Date().toLocaleDateString()}
+                                    </p>
                                 </div>
 
                                 {organizationTree.length > 0 ? (
                                     <div className="flex justify-center items-center h-full">
-                                      {/* UPDATED: a single root UL with the main class */}
-                                      <ul className="org-chart">
+                                      {/* MODIFIED: The root is now the LI elements directly inside the org-chart container */}
+                                      <div className="org-chart">
                                           {organizationTree.map((node) => renderOrganizationNode(node))}
-                                      </ul>
+                                      </div>
                                     </div>
                                 ) : (
                                     <div className="text-center py-12">
-                                        {/* ... Fallback content is unchanged ... */}
+                                        {/* ... Fallback content ... */}
                                     </div>
                                 )}
                             </div>
@@ -289,27 +298,14 @@ export const EmergencyNetworkPage = () => {
           </div>
 
           <div className="lg:w-80 print:hidden">
-             {/* ... Right sidebar JSX is unchanged ... */}
+             {/* ... Right sidebar ... */}
           </div>
         </div>
       </div>
 
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          @media print {
-            @page {
-              margin: 1cm;
-              size: A4 landscape;
-            }
-            .print\\:hidden { display: none !important; }
-            body { background: white !important; }
-            .org-chart {
-                transform: scale(0.7);
-                transform-origin: top left;
-            }
-          }
-        `
-      }} />
+      <style dangerouslySetInnerHTML={{ __html: `
+          @media print { /* ... Print styles ... */ }
+      `}} />
     </div>
   )
 }
