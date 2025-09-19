@@ -120,80 +120,86 @@ All colors MUST be HSL.
   }
 }
 
-.org-tree {
-  /* 조직도 전체를 감싸는 컨테이너 */
-  text-align: center;
-  display: inline-block;
+.org-chart {
+  /* 전체 조직도를 감싸는 컨테이너 */
+  display: flex;
+  justify-content: center;
 }
 
-.org-tree ul {
+.org-chart ul {
   /* 자식 노드 그룹 */
   display: flex;
   position: relative;
-  padding-top: 20px;
 }
 
-.org-tree li {
+.org-chart li {
   /* 개별 노드 */
   display: flex;
   flex-direction: column;
-  flex: 1;
+  align-items: center;
   position: relative;
-  padding: 0 10px;
+  padding: 1rem; /* 노드 간 가로 간격 */
 }
 
-/* 자식 노드로 이어지는 연결선 그리기 (핵심) */
-.org-tree li::before,
-.org-tree li::after {
+.org-chart .node-card {
+  /* 직원 정보 카드 */
+  margin-top: 1.5rem; /* 카드 위 연결선 공간 */
+}
+
+/* 카드와 부모의 가로선을 잇는 수직선 */
+.org-chart li::before {
   content: '';
   position: absolute;
   top: 0;
-  right: 50%;
-  border-top: 1.5px solid #cbd5e1; /* gray-300 */
-  width: 50%;
-  height: 20px;
-}
-
-.org-tree li::after {
-  right: auto;
   left: 50%;
-  border-left: 1.5px solid #cbd5e1; /* gray-300 */
+  transform: translateX(-50%);
+  width: 2px;
+  height: 1.5rem; /* 카드의 margin-top과 동일한 값 */
+  background-color: #cbd5e1; /* gray-300 */
 }
 
-/* 첫 번째, 마지막, 단일 자식 노드의 선 모양 조정 */
-.org-tree li:only-child::after,
-.org-tree li:only-child::before {
+/* 형제 노드를 연결하는 수평선 */
+.org-chart li::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #cbd5e1; /* gray-300 */
+}
+
+/* 최상위 노드의 연결선은 그리지 않음 */
+.org-chart > li::before,
+.org-chart > li::after {
   display: none;
 }
 
-.org-tree li:first-child::before,
-.org-tree li:last-child::after {
-  border: 0 none;
-}
-
-.org-tree li:last-child::before {
-  border-right: 1.5px solid #cbd5e1; /* gray-300 */
-  border-radius: 0 5px 0 0;
-}
-
-.org-tree li:first-child::after {
-  border-radius: 5px 0 0 0;
-}
-
-/* 부모에서 자식 그룹으로 내려오는 수직선 */
-.org-tree ul ul::before {
+/* 부모 노드와 자식 그룹을 잇는 수직선 */
+.org-chart ul::before {
   content: '';
   position: absolute;
-  top: -20px;
+  top: -1.5rem; /* 카드 아래로 연결되도록 */
   left: 50%;
-  border-left: 1.5px solid #cbd5e1; /* gray-300 */
-  width: 0;
-  height: 20px;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 1.5rem;
+  background-color: #cbd5e1; /* gray-300 */
 }
 
-/* 카드와 연결선을 자연스럽게 잇기 위한 스타일 */
-.org-tree .card-wrapper {
-  display: inline-block;
-  padding-top: 20px;
-  margin-top: -20px;
+/* 첫 번째 자식의 수평선은 오른쪽 절반만 표시 */
+.org-chart li:first-child:not(:only-child)::after {
+  left: 50%;
+  width: 50%;
+}
+
+/* 마지막 자식의 수평선은 왼쪽 절반만 표시 */
+.org-chart li:last-child:not(:only-child)::after {
+  right: 50%;
+  width: 50%;
+}
+
+/* 자식이 하나일 경우 수평선을 그리지 않음 */
+.org-chart li:only-child::after {
+  display: none;
 }
