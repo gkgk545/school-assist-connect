@@ -69,7 +69,7 @@ export const EmergencyNetworkPage = () => {
   const [organizationTree, setOrganizationTree] = useState<OrganizationNode[]>([])
   const [user, setUser] = useState<any>(null)
   const orgChartRef = useRef<HTMLDivElement>(null)
-  const transformControlsRef = useRef<{ resetTransform: () => void; } | null>(null);
+  const transformControlsRef = useRef<{ resetTransform: () => void } | null>(null);
   
   const { toast } = useToast()
   const navigate = useNavigate()
