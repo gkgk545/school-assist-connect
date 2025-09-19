@@ -2,39 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
     --background: 210 20% 98%;
     --foreground: 213 27% 14%;
-
     --card: 0 0% 100%;
     --card-foreground: 213 27% 14%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 213 27% 14%;
-
     --primary: 214 84% 56%;
     --primary-foreground: 0 0% 100%;
-
     --secondary: 210 40% 94%;
     --secondary-foreground: 213 50% 25%;
-
     --muted: 214 32% 91%;
     --muted-foreground: 215 16% 47%;
-
     --accent: 142 71% 45%;
     --accent-foreground: 0 0% 100%;
-
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 214 32% 85%;
     --input: 214 32% 91%;
     --ring: 214 84% 56%;
+    --radius: 0.5rem;
 
     /* Custom education theme colors */
     --education-primary: 214 84% 56%;
@@ -45,111 +34,26 @@ All colors MUST be HSL.
     /* Gradient definitions */
     --gradient-primary: linear-gradient(135deg, hsl(214 84% 56%), hsl(214 84% 66%));
     --gradient-secondary: linear-gradient(135deg, hsl(142 71% 45%), hsl(142 71% 55%));
-    --gradient-hero: linear-gradient(135deg, hsl(214 84% 56%) 0%, hsl(142 71% 45%) 100%);
-    
-    /* Shadow definitions */
-    --shadow-soft: 0 2px 8px -2px hsl(214 84% 56% / 0.1);
-    --shadow-medium: 0 4px 16px -4px hsl(214 84% 56% / 0.15);
-    --shadow-strong: 0 8px 32px -8px hsl(214 84% 56% / 0.2);
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; }
 }
 
 /* --- 조직도 스타일 시작 --- */
-/* src/index.css 파일의 조직도 관련 스타일을 모두 지우고 아래 코드로 교체하세요. */
-
 .org-chart {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
 }
 
-.org-chart .node-card {
-  position: relative;
-  display: inline-block;
-}
-
-/* 부모 노드에서 아래로 내려오는 수직선 */
-.org-chart li > .node-card.has-children::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translate(-50%, 100%);
-  width: 2px;
-  height: 1.5rem; /* 부모-자식 간 간격 */
-  background-color: #cbd5e1; /* gray-300 */
-}
-
 .org-chart ul {
   display: flex;
+  justify-content: center;
   position: relative;
-  padding-top: 1.5rem; /* 부모-자식 간 간격 */
+  padding-top: 1.5rem;
 }
 
 .org-chart li {
@@ -157,10 +61,25 @@ All colors MUST be HSL.
   flex-direction: column;
   align-items: center;
   position: relative;
-  padding: 0 1rem; /* 형제 노드 간 간격 */
+  padding: 0 0.5rem;
 }
 
-/* 수평선에서 노드로 내려오는 수직선 */
+.node-card {
+  position: relative;
+  display: inline-block;
+}
+
+.node-card.has-children::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 100%);
+  width: 2px;
+  height: 1.5rem;
+  background-color: #d1d5db; /* gray-300 */
+}
+
 .org-chart ul > li::before {
   content: '';
   position: absolute;
@@ -168,11 +87,10 @@ All colors MUST be HSL.
   left: 50%;
   transform: translateX(-50%);
   width: 2px;
-  height: 1.5rem; /* ul의 padding-top과 동일한 값 */
-  background-color: #cbd5e1; /* gray-300 */
+  height: 1.5rem;
+  background-color: #d1d5db;
 }
 
-/* 형제 노드를 잇는 수평선 */
 .org-chart ul > li::after {
   content: '';
   position: absolute;
@@ -180,44 +98,38 @@ All colors MUST be HSL.
   left: 0;
   width: 100%;
   height: 2px;
-  background-color: #cbd5e1; /* gray-300 */
+  background-color: #d1d5db;
 }
 
-/* 최상위 li에는 선을 그리지 않음 (ul > li 규칙으로 대체) */
 .org-chart > li::before,
 .org-chart > li::after {
   display: none;
 }
 
-/* 첫 번째 자식의 수평선은 오른쪽 절반만 표시 */
 .org-chart li:first-child:not(:only-child)::after {
   left: 50%;
+  width: 50%;
 }
 
-/* 마지막 자식의 수평선은 왼쪽 절반만 표시 */
 .org-chart li:last-child:not(:only-child)::after {
   right: 50%;
+  width: 50%;
 }
 
-/* 자식이 하나일 경우, 수평선을 그리지 않음 */
 .org-chart li:only-child::after {
   display: none;
 }
 
-
-/* 부원들을 위한 세로 레이아웃 스타일 */
 .org-chart ul.is-vertical {
   flex-direction: column;
   align-items: center;
+  padding-top: 0;
 }
 
-/* 세로 레이아웃의 각 항목(부원) 스타일 */
 .org-chart ul.is-vertical li {
-  padding-left: 0;
-  padding-right: 0;
+  padding: 1.5rem 0 0 0;
 }
 
-/* 세로 레이아웃에서는 형제를 연결하는 수평선 제거 */
 .org-chart ul.is-vertical li::after {
   display: none;
 }
