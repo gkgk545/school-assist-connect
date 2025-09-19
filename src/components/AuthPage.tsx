@@ -34,9 +34,9 @@ export const AuthPage = () => {
   }, [navigate]);
   
 
-  // 학교 ID를 기반으로 이메일 주소 생성
   const createEmailFromSchoolId = (id: string) => {
-    const sanitizedId = id.trim().toLowerCase();
+    // 공백, 특수문자를 제거하고 소문자로 변환
+    const sanitizedId = id.trim().replace(/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣-]/g, '').toLowerCase();
     return `${sanitizedId}@school.app`;
   }
 
@@ -78,16 +78,27 @@ export const AuthPage = () => {
         return;
     }
 
+    // ID 유효성 검사 추가
+    const sanitizedId = signUpSchoolId.trim().replace(/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣-]/g, '').toLowerCase();
+    if (!sanitizedId) {
+        toast({
+            title: "입력 오류",
+            description: "학교 ID는 최소 하나 이상의 유효한 문자(한글, 영문, 숫자, 하이픈)를 포함해야 합니다.",
+            variant: "destructive",
+        });
+        return;
+    }
+
     setLoading(true)
 
-    const email = createEmailFromSchoolId(signUpSchoolId);
+    const email = `${sanitizedId}@school.app`;
 
     const { error } = await supabase.auth.signUp({
       email,
       password: signUpPassword,
       options: {
         data: {
-          school_name: signUpSchoolName, // 표시될 학교 이름은 메타데이터로 저장
+          school_name: signUpSchoolName,
         }
       }
     })
@@ -96,7 +107,7 @@ export const AuthPage = () => {
       console.error('Signup Error:', error);
       toast({
         title: "회원가입 실패",
-        description: error.message, // Supabase의 실제 에러 메시지를 표시
+        description: error.message,
         variant: "destructive",
       })
     } else {
@@ -107,7 +118,7 @@ export const AuthPage = () => {
       setSignUpSchoolId('');
       setSignUpSchoolName('');
       setSignUpPassword('');
-      setLoginSchoolId(signUpSchoolId); // 편의를 위해 로그인 폼에 ID 채워주기
+      setLoginSchoolId(signUpSchoolId);
       setActiveTab('login');
     }
     setLoading(false)
@@ -135,7 +146,7 @@ export const AuthPage = () => {
                   <Input 
                     id="school-id-login" 
                     type="text" 
-                    placeholder="예: hangbok_cho" 
+                    placeholder="예: hangbok-cho" 
                     required 
                     value={loginSchoolId}
                     onChange={(e) => setLoginSchoolId(e.target.value)}
@@ -173,7 +184,7 @@ export const AuthPage = () => {
                   <Input 
                     id="school-id-signup" 
                     type="text" 
-                    placeholder="공백 없는 영문, 숫자 조합" 
+                    placeholder="한글, 영문, 숫자, 하이픈(-)만 가능" 
                     required 
                     value={signUpSchoolId}
                     onChange={(e) => setSignUpSchoolId(e.target.value)}
