@@ -138,11 +138,8 @@ export const EmergencyNetworkPage = () => {
     if (!element || !transformWrapperRef.current) return;
 
     const { resetTransform } = transformWrapperRef.current;
-    
-    // 캡처 전에 화면을 초기 상태로 리셋
     resetTransform();
   
-    // DOM 업데이트를 기다리기 위한 짧은 지연
     setTimeout(async () => {
       try {
         const canvas = await html2canvas(element, {
@@ -248,14 +245,18 @@ export const EmergencyNetworkPage = () => {
                           <Button variant="outline" onClick={handlePrint}> <Printer className="h-4 w-4 mr-2" /> 인쇄 </Button>
                           <Button variant="outline" onClick={handleDownloadImage}> <Download className="h-4 w-4 mr-2" /> 이미지 다운로드 </Button>
                       </div>
-                      <Controls zoomIn={zoomIn} zoomOut={zoomOut} resetTransform={resetTransform} />
+                      <div className="flex gap-2 p-2 rounded-md bg-white border shadow-md print:hidden">
+                        <Button variant="outline" size="icon" onClick={() => zoomIn()} aria-label="Zoom In"> <ZoomIn className="h-4 w-4" /> </Button>
+                        <Button variant="outline" size="icon" onClick={() => zoomOut()} aria-label="Zoom Out"> <ZoomOut className="h-4 w-4" /> </Button>
+                        <Button variant="outline" size="icon" onClick={() => resetTransform()} aria-label="Reset Zoom"> <RotateCcw className="h-4 w-4" /> </Button>
+                      </div>
                     </div>
                   </div>
                   <TransformComponent wrapperStyle={{ width: '100%', height: 'calc(100vh - 250px)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}>
                     <div ref={orgChartRef} className="bg-white rounded-lg p-6">
                         <div className="text-center mb-12">
-                          <h2 className="org-title text-3xl font-bold text-education-primary mb-2"> {user?.user_metadata?.school_name || '학교'} 비상연락망 </h2>
-                          <p className="org-subtitle text-education-neutral"> 생성일: {new Date().toLocaleDateString()} </p>
+                          <h2 className="text-3xl font-bold text-education-primary mb-2"> {user?.user_metadata?.school_name || '학교'} 비상연락망 </h2>
+                          <p className="text-education-neutral"> 생성일: {new Date().toLocaleDateString()} </p>
                         </div>
                         {organizationTree.length > 0 ? (
                             <div className="flex justify-center items-start">
