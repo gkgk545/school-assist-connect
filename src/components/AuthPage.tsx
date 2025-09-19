@@ -9,9 +9,13 @@ import { useToast } from '@/hooks/use-toast'
 import { useNavigate } from 'react-router-dom'
 
 export const AuthPage = () => {
-  const [schoolName, setSchoolName] = useState('')
-  // 담당자명(contactName) state 제거
-  const [password, setPassword] = useState('')
+  // 로그인과 회원가입의 상태를 분리
+  const [loginSchoolName, setLoginSchoolName] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  
+  const [signUpSchoolName, setSignUpSchoolName] = useState('')
+  const [signUpPassword, setSignUpPassword] = useState('')
+
   const [loading, setLoading] = useState(false)
   
   const { toast } = useToast()
@@ -26,11 +30,11 @@ export const AuthPage = () => {
     e.preventDefault()
     setLoading(true)
     
-    const email = createEmailFromSchoolName(schoolName);
+    const email = createEmailFromSchoolName(loginSchoolName);
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
-      password,
+      password: loginPassword,
     })
 
     if (error) {
@@ -51,8 +55,7 @@ export const AuthPage = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
-    // 담당자명 유효성 검사 제거
-    if (!schoolName || !password) {
+    if (!signUpSchoolName || !signUpPassword) {
         toast({
             title: "입력 오류",
             description: "학교명과 비밀번호를 모두 입력해주세요.",
@@ -63,15 +66,14 @@ export const AuthPage = () => {
 
     setLoading(true)
 
-    const email = createEmailFromSchoolName(schoolName);
+    const email = createEmailFromSchoolName(signUpSchoolName);
 
     const { error } = await supabase.auth.signUp({
       email,
-      password,
+      password: signUpPassword,
       options: {
         data: {
-          school_name: schoolName,
-          // 담당자명 데이터 제거
+          school_name: signUpSchoolName,
         }
       }
     })
@@ -87,6 +89,9 @@ export const AuthPage = () => {
         title: "회원가입 성공",
         description: "로그인 탭에서 로그인해주세요.",
       })
+      // 회원가입 성공 후 입력 필드 초기화
+      setSignUpSchoolName('');
+      setSignUpPassword('');
     }
     setLoading(false)
   }
@@ -115,8 +120,8 @@ export const AuthPage = () => {
                     type="text" 
                     placeholder="예: 행복초등학교" 
                     required 
-                    value={schoolName}
-                    onChange={(e) => setSchoolName(e.target.value)}
+                    value={loginSchoolName}
+                    onChange={(e) => setLoginSchoolName(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -125,8 +130,8 @@ export const AuthPage = () => {
                     id="password-login" 
                     type="password" 
                     required 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
                   />
                 </div>
                 <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90" disabled={loading}>
@@ -153,19 +158,18 @@ export const AuthPage = () => {
                     type="text" 
                     placeholder="예: 행복초등학교" 
                     required 
-                    value={schoolName}
-                    onChange={(e) => setSchoolName(e.target.value)}
+                    value={signUpSchoolName}
+                    onChange={(e) => setSignUpSchoolName(e.target.value)}
                   />
                 </div>
-                {/* 담당자명 입력 필드 제거 */}
                 <div className="space-y-2">
                   <Label htmlFor="password-signup">비밀번호</Label>
                   <Input 
                     id="password-signup" 
                     type="password" 
                     required 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={signUpPassword}
+                    onChange={(e) => setSignUpPassword(e.target.value)}
                     minLength={6}
                     placeholder="6자리 이상 입력해주세요"
                   />
