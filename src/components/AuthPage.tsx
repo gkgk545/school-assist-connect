@@ -10,16 +10,14 @@ import { useNavigate } from 'react-router-dom'
 
 export const AuthPage = () => {
   const [schoolName, setSchoolName] = useState('')
-  const [contactName, setContactName] = useState('')
+  // 담당자명(contactName) state 제거
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   
   const { toast } = useToast()
   const navigate = useNavigate()
 
-  // 학교명을 고유한 이메일 형식으로 변환하는 헬퍼 함수
   const createEmailFromSchoolName = (name: string) => {
-    // 공백을 제거하고, 특수문자를 일부 제거한 후, 고유한 도메인을 붙여줍니다.
     const sanitizedName = name.replace(/\s+/g, '').toLowerCase();
     return `${sanitizedName}@school.app`;
   }
@@ -28,7 +26,6 @@ export const AuthPage = () => {
     e.preventDefault()
     setLoading(true)
     
-    // 입력된 학교명으로 이메일 생성
     const email = createEmailFromSchoolName(schoolName);
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -54,10 +51,11 @@ export const AuthPage = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!schoolName || !contactName || !password) {
+    // 담당자명 유효성 검사 제거
+    if (!schoolName || !password) {
         toast({
             title: "입력 오류",
-            description: "모든 필드를 입력해주세요.",
+            description: "학교명과 비밀번호를 모두 입력해주세요.",
             variant: "destructive",
         });
         return;
@@ -65,7 +63,6 @@ export const AuthPage = () => {
 
     setLoading(true)
 
-    // 입력된 학교명으로 이메일 생성
     const email = createEmailFromSchoolName(schoolName);
 
     const { error } = await supabase.auth.signUp({
@@ -74,7 +71,7 @@ export const AuthPage = () => {
       options: {
         data: {
           school_name: schoolName,
-          contact_name: contactName,
+          // 담당자명 데이터 제거
         }
       }
     })
@@ -145,7 +142,7 @@ export const AuthPage = () => {
               <CardHeader>
                 <CardTitle>회원가입</CardTitle>
                 <CardDescription>
-                  필요한 정보를 입력하여 계정을 생성하세요.
+                  학교명과 비밀번호를 입력하여 계정을 생성하세요.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -160,17 +157,7 @@ export const AuthPage = () => {
                     onChange={(e) => setSchoolName(e.target.value)}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="contact-name-signup">담당자명</Label>
-                  <Input 
-                    id="contact-name-signup" 
-                    type="text" 
-                    placeholder="홍길동" 
-                    required 
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                  />
-                </div>
+                {/* 담당자명 입력 필드 제거 */}
                 <div className="space-y-2">
                   <Label htmlFor="password-signup">비밀번호</Label>
                   <Input 
