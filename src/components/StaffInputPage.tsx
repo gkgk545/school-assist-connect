@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
-import { Plus, Trash2, Users, Save } from 'lucide-react'
+import { Plus, Trash2, Users, Save, Upload } from 'lucide-react'
+import * as XLSX from 'xlsx';
 
 interface StaffMember {
   id: string
@@ -17,11 +18,18 @@ interface StaffMember {
   contact: string
 }
 
-const POSITION_LABELS = {
+const POSITION_LABELS: { [key in StaffMember['position']]: string } = {
   principal: '교장',
   vice_principal: '교감',
   department_head: '부서장',
   staff: '부원'
+}
+
+const KOREAN_TO_POSITION: { [key: string]: StaffMember['position'] } = {
+  '교장': 'principal',
+  '교감': 'vice_principal',
+  '부서장': 'department_head',
+  '부원': 'staff',
 }
 
 export const StaffInputPage = () => {
@@ -30,6 +38,7 @@ export const StaffInputPage = () => {
   ])
   const [isLoading, setIsLoading] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { toast } = useToast()
   const navigate = useNavigate()
@@ -46,7 +55,6 @@ export const StaffInputPage = () => {
     }
     setUser(user)
     
-    // Load existing staff data if available
     loadExistingStaff(user.id)
   }
 
@@ -95,10 +103,68 @@ export const StaffInputPage = () => {
     ))
   }
 
+  const handleExcelImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json<any>(worksheet);
+
+        const importedStaff: StaffMember[] = json.map((row, index) => {
+          const positionInKorean = row['직위']?.trim();
+          const position = KOREAN_TO_POSITION[positionInKorean] || 'staff';
+          
+          if (!row['이름'] || !row['부서명'] || !row['연락처']) {
+              throw new Error(`${index + 2}번째 행에 필수 정보(이름, 부서명, 연락처)가 누락되었습니다.`);
+          }
+
+          return {
+            id: Math.random().toString(36).substr(2, 9),
+            name: String(row['이름']),
+            department: String(row['부서명']),
+            position: position,
+            contact: String(row['연락처']),
+          };
+        });
+
+        if (importedStaff.length > 0) {
+            setStaffMembers(importedStaff);
+            toast({
+                title: "가져오기 성공",
+                description: `${importedStaff.length}명의 교직원 정보를 불러왔습니다.`,
+            });
+        } else {
+             toast({
+                title: "빈 파일",
+                description: "엑셀 파일에 데이터가 없습니다.",
+                variant: "destructive",
+            });
+        }
+      } catch (error: any) {
+        toast({
+          title: "가져오기 실패",
+          description: error.message || "엑셀 파일을 처리하는 중 오류가 발생했습니다.",
+          variant: "destructive",
+        });
+      } finally {
+        // Reset file input so the same file can be selected again
+        if(fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validate required fields
     const emptyFields = staffMembers.some(member => 
       !member.name.trim() || !member.department.trim() || !member.contact.trim()
     )
@@ -115,19 +181,14 @@ export const StaffInputPage = () => {
     setIsLoading(true)
 
     try {
-      // Delete existing staff data
       await supabase
         .from('staff')
         .delete()
         .eq('school_id', user.id)
 
-      // Insert new staff data
-      const staffData = staffMembers.map(member => ({
+      const staffData = staffMembers.map(({ id, ...member}) => ({ // id를 제외하고 insert
         school_id: user.id,
-        name: member.name,
-        department: member.department,
-        position: member.position,
-        contact: member.contact
+        ...member
       }))
 
       const { error } = await supabase
@@ -180,7 +241,24 @@ export const StaffInputPage = () => {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">교직원 목록</h2>
+            <div className='flex items-center gap-2'>
+              <h2 className="text-xl font-semibold">교직원 목록</h2>
+              <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  className="hidden" 
+                  accept=".xlsx, .xls"
+                  onChange={handleExcelImport}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                  <Upload className="h-4 w-4 mr-2" />
+                  엑셀 가져오기
+              </Button>
+            </div>
             <Button
               type="button"
               onClick={addStaffMember}
@@ -246,10 +324,9 @@ export const StaffInputPage = () => {
                           <SelectValue placeholder="직위 선택" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="principal">교장</SelectItem>
-                          <SelectItem value="vice_principal">교감</SelectItem>
-                          <SelectItem value="department_head">부서장</SelectItem>
-                          <SelectItem value="staff">부원</SelectItem>
+                          {Object.entries(POSITION_LABELS).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>{label}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
