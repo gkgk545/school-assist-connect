@@ -120,81 +120,128 @@ All colors MUST be HSL.
   }
 }
 
+/* 조직도 기본 구조 */
 .org-chart {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
+  display: flex;
+  justify-content: center;
+  font-family: inherit;
+}
+
+.org-chart,
+.org-chart ul,
+.org-chart li {
+  position: relative;
 }
 
 .org-chart ul {
+  padding-top: 20px;
+  position: relative;
+  transition: all 0.5s;
   display: flex;
   justify-content: center;
-  position: relative;
 }
 
 .org-chart li {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  float: left;
+  text-align: center;
+  list-style-type: none;
   position: relative;
-  padding: 1.5rem 0.5rem 0 0.5rem; /* 상단 연결선을 위한 공간과 좌우 간격 */
+  padding: 20px 5px 0 5px;
+  transition: all 0.5s;
 }
 
-/* 수평선에서 노드로 내려오는 수직선 */
+/* 부모와 자식을 연결하는 수직선 */
 .org-chart li::before {
   content: '';
   position: absolute;
   top: 0;
   left: 50%;
-  transform: translateX(-50%);
-  width: 2px;
-  height: 1.5rem;
-  background-color: #d1d5db; /* gray-300 */
+  border-left: 2px solid #ccc;
+  width: 0;
+  height: 20px;
+  z-index: 1;
 }
 
-/* 형제 노드를 잇는 수평선 */
+/* 형제들을 연결하는 수평선 */
 .org-chart li::after {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
+  border-top: 2px solid #ccc;
   width: 100%;
-  height: 2px;
-  background-color: #d1d5db; /* gray-300 */
+  height: 0;
+  z-index: 1;
 }
 
-/* 부모 노드에서 자식 그룹(ul)으로 내려오는 수직선 */
-.org-chart ul::before {
+/* 부모에서 자식 그룹으로 내려오는 수직선 */
+.org-chart li ul::before {
   content: '';
   position: absolute;
-  top: -1.5rem;
+  top: -20px;
   left: 50%;
-  transform: translateX(-50%);
-  width: 2px;
-  height: 1.5rem;
-  background-color: #d1d5db; /* gray-300 */
+  border-left: 2px solid #ccc;
+  width: 0;
+  height: 20px;
+  z-index: 1;
 }
 
-/* --- 선 모양 정리 --- */
+/* 첫 번째 자식의 수평선은 가운데부터 시작 */
+.org-chart li:first-child::after {
+  border: 0 none;
+  border-top: 2px solid #ccc;
+  border-radius: 0;
+  left: 50%;
+  width: 50%;
+}
 
-/* 최상위 노드의 위/옆 선 제거 */
+/* 마지막 자식의 수평선은 가운데까지만 */
+.org-chart li:last-child::after {
+  border: 0 none;
+  border-top: 2px solid #ccc;
+  border-radius: 0;
+  right: 50%;
+  width: 50%;
+}
+
+/* 외동 자식은 수평선 없음 */
+.org-chart li:only-child::after {
+  display: none;
+}
+
+/* 외동 자식의 수직선도 제거 */
+.org-chart li:only-child::before {
+  display: none;
+}
+
+/* 루트 노드는 연결선 없음 */
 .org-chart > li::before,
 .org-chart > li::after {
   display: none;
 }
 
-/* 자식이 하나일 경우, 수평선 제거 */
-.org-chart li:only-child::after {
+/* 첫 번째와 마지막이 같은 경우 (형제가 하나일 때) */
+.org-chart li:first-child:last-child::before {
   display: none;
 }
 
-/* 첫 번째 자식의 수평선은 중앙에서 시작 */
-.org-chart li:first-child:not(:only-child)::after {
-  left: 50%;
+.org-chart li:first-child:last-child::after {
+  display: none;
 }
 
-/* 마지막 자식의 수평선은 중앙에서 끝남 */
-.org-chart li:last-child:not(:only-child)::after {
-  right: 50%;
-  width: 50%;
+/* 노드 카드 스타일링 */
+.org-chart .node-card {
+  display: inline-block;
+  margin: 0 5px;
+  position: relative;
+  z-index: 2;
+}
+
+/* 인쇄시 연결선 색상 조정 */
+@media print {
+  .org-chart li::before,
+  .org-chart li::after,
+  .org-chart li ul::before {
+    border-color: #000 !important;
+  }
 }
