@@ -1,6 +1,4 @@
-// src/components/AuthPage.tsx
-
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,12 +9,12 @@ import { useToast } from '@/hooks/use-toast'
 import { useNavigate } from 'react-router-dom'
 
 export const AuthPage = () => {
-  // 로그인과 회원가입의 상태를 분리
-  const [loginEmail, setLoginEmail] = useState('')
+  const [activeTab, setActiveTab] = useState('login');
+  
+  const [loginSchoolName, setLoginSchoolName] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
   
   const [signUpSchoolName, setSignUpSchoolName] = useState('')
-  const [signUpEmail, setSignUpEmail] = useState('')
   const [signUpPassword, setSignUpPassword] = useState('')
 
   const [loading, setLoading] = useState(false)
@@ -24,25 +22,50 @@ export const AuthPage = () => {
   const { toast } = useToast()
   const navigate = useNavigate()
 
+  useEffect(() => {
+    const checkUser = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            navigate('/staff-input');
+        }
+    };
+    checkUser();
+  }, [navigate]);
+  
+
+  // 더 안전하게 이메일을 생성하는 함수
+  const createUniqueEmailFromSchoolName = (name: string) => {
+    // 1. 모든 공백을 '_'로 변경
+    // 2. 이메일에 허용되지 않는 특수문자 제거 (한글, 영문, 숫자, 밑줄, 점, 하이픈만 허용)
+    // 3. 소문자로 변환
+    const sanitizedName = name
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣_.-]/g, '')
+      .toLowerCase();
+    return `${sanitizedName}@school.app`;
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    
+    const email = createUniqueEmailFromSchoolName(loginSchoolName);
 
     const { error } = await supabase.auth.signInWithPassword({
-      email: loginEmail,
+      email,
       password: loginPassword,
     })
 
     if (error) {
       toast({
         title: "로그인 실패",
-        description: "이메일 또는 비밀번호를 확인해주세요.",
+        description: "학교명 또는 비밀번호를 확인해주세요.",
         variant: "destructive",
       })
     } else {
       toast({
         title: "로그인 성공",
-        description: "비상연락망 페이지로 이동합니다.",
+        description: "교직원 정보 입력 페이지로 이동합니다.",
       })
       navigate('/staff-input')
     }
@@ -51,10 +74,10 @@ export const AuthPage = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!signUpSchoolName || !signUpEmail || !signUpPassword) {
+    if (!signUpSchoolName || !signUpPassword) {
         toast({
             title: "입력 오류",
-            description: "모든 필드를 입력해주세요.",
+            description: "학교명과 비밀번호를 모두 입력해주세요.",
             variant: "destructive",
         });
         return;
@@ -62,8 +85,10 @@ export const AuthPage = () => {
 
     setLoading(true)
 
-    const { data, error } = await supabase.auth.signUp({
-      email: signUpEmail,
+    const email = createUniqueEmailFromSchoolName(signUpSchoolName);
+
+    const { error } = await supabase.auth.signUp({
+      email,
       password: signUpPassword,
       options: {
         data: {
@@ -74,26 +99,29 @@ export const AuthPage = () => {
 
     if (error) {
       console.error('Signup Error:', error);
+      // Supabase에서 받은 실제 에러 메시지를 보여줍니다.
       toast({
         title: "회원가입 실패",
-        description: error.message || "이미 사용 중인 이메일이거나 다른 문제가 발생했습니다.",
+        description: error.message,
         variant: "destructive",
       })
     } else {
       toast({
         title: "회원가입 성공!",
-        description: "가입 확인을 위해 이메일을 확인해주세요. (이메일 인증을 비활성화한 경우, 바로 로그인 가능합니다.)",
+        description: "로그인 탭에서 바로 로그인해주세요.",
       })
+      // 입력 필드 초기화 및 로그인 탭으로 전환
       setSignUpSchoolName('');
-      setSignUpEmail('');
       setSignUpPassword('');
+      setLoginSchoolName(signUpSchoolName); // 편의를 위해 로그인 폼에 학교명 채워주기
+      setActiveTab('login');
     }
     setLoading(false)
   }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-education-light p-4">
-      <Tabs defaultValue="login" className="w-[400px]">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login">로그인</TabsTrigger>
           <TabsTrigger value="signup">회원가입</TabsTrigger>
@@ -104,19 +132,19 @@ export const AuthPage = () => {
               <CardHeader>
                 <CardTitle>로그인</CardTitle>
                 <CardDescription>
-                  이메일과 비밀번호를 입력하여 로그인하세요.
+                  가입 시 사용한 학교명과 비밀번호를 입력하세요.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email-login">이메일</Label>
+                  <Label htmlFor="school-name-login">학교명</Label>
                   <Input 
-                    id="email-login" 
-                    type="email" 
-                    placeholder="email@example.com" 
+                    id="school-name-login" 
+                    type="text" 
+                    placeholder="예: 행복초등학교" 
                     required 
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
+                    value={loginSchoolName}
+                    onChange={(e) => setLoginSchoolName(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -142,7 +170,7 @@ export const AuthPage = () => {
               <CardHeader>
                 <CardTitle>회원가입</CardTitle>
                 <CardDescription>
-                  학교명, 이메일, 비밀번호를 입력하여 계정을 생성하세요.
+                  학교명과 비밀번호를 입력하여 계정을 생성하세요.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -155,17 +183,6 @@ export const AuthPage = () => {
                     required 
                     value={signUpSchoolName}
                     onChange={(e) => setSignUpSchoolName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email-signup">이메일</Label>
-                  <Input 
-                    id="email-signup" 
-                    type="email" 
-                    placeholder="email@example.com" 
-                    required 
-                    value={signUpEmail}
-                    onChange={(e) => setSignUpEmail(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
