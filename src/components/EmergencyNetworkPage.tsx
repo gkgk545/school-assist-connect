@@ -183,12 +183,97 @@ export const EmergencyNetworkPage = () => {
     setOrganizationTree(tree);
   };
 
-  const handleSaveLayout = async () => { /* ... */ };
-  const handlePrint = () => { window.print() };
-  const handleDownloadImage = async () => { /* ... */ };
-  const handleGenerateShareLink = async () => { /* ... */ };
-  const handleLogout = async () => { await supabase.auth.signOut(); navigate('/'); };
+  const handleSaveLayout = async () => {
+    setIsLoading(true)
+    try {
+      const layoutData = {
+        tree: organizationTree,
+        lastUpdated: new Date().toISOString()
+      }
 
+      const { error } = await supabase
+        .from('organization_layouts')
+        .upsert({
+          school_id: user.id,
+          layout_data: layoutData as any
+        })
+
+      if (error) throw error
+
+      toast({
+        title: "레이아웃 저장됨",
+        description: "조직도 레이아웃이 저장되었습니다.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "저장 실패",
+        description: error.message,
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handlePrint = () => {
+    window.print()
+  }
+
+  const handleDownloadImage = async () => {
+    if (!orgChartRef.current) return
+
+    try {
+      const canvas = await html2canvas(orgChartRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2
+      })
+      
+      const link = document.createElement('a')
+      link.download = `비상연락망_${new Date().toLocaleDateString()}.png`
+      link.href = canvas.toDataURL()
+      link.click()
+
+      toast({
+        title: "이미지 다운로드",
+        description: "비상연락망 이미지가 다운로드되었습니다.",
+      })
+    } catch (error) {
+      toast({
+        title: "다운로드 실패",
+        description: "이미지 생성에 실패했습니다.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleGenerateShareLink = async () => {
+    try {
+      const shareId = Math.random().toString(36).substr(2, 9)
+      const url = `${window.location.origin}/share/${shareId}`
+      setShareUrl(url)
+
+      await navigator.clipboard.writeText(url)
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 2000)
+
+      toast({
+        title: "공유 링크 생성됨",
+        description: "링크가 클립보드에 복사되었습니다.",
+      })
+    } catch (error) {
+      toast({
+        title: "링크 생성 실패",
+        description: "공유 링크 생성에 실패했습니다.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    navigate('/')
+  }
+  
   const getNodeBgColor = (position: StaffMember['position']) => {
     switch(position) {
       case 'principal': return 'bg-gradient-primary text-white border-blue-500';
@@ -349,20 +434,24 @@ export const EmergencyNetworkPage = () => {
             <Card className="shadow-medium">
                 <CardContent className="p-6">
                     <h3 className="font-semibold text-education-primary mb-4">사용 방법</h3>
-                    <div className="space-y-3 text-sm text-education-neutral">
-                        <div className="flex items-start space-x-2">
-                            <div className="w-2 h-2 bg-education-primary rounded-full mt-2 flex-shrink-0"></div>
-                            <p>마우스 휠 또는 컨트롤 버튼으로 조직도를 확대/축소할 수 있습니다.</p>
-                        </div>
-                        <div className="flex items-start space-x-2">
-                            <div className="w-2 h-2 bg-education-secondary rounded-full mt-2 flex-shrink-0"></div>
-                            <p>마우스로 드래그하여 조직도를 이동할 수 있습니다.</p>
-                        </div>
-                        <div className="flex items-start space-x-2">
-                            <div className="w-2 h-2 bg-education-primary rounded-full mt-2 flex-shrink-0"></div>
-                            <p>인쇄 또는 이미지로 다운로드할 수 있습니다.</p>
-                        </div>
-                    </div>
+                    <ul className="space-y-3 text-sm text-education-neutral text-left">
+                        <li className="flex items-start space-x-3">
+                            <span className="w-2 h-2 bg-education-primary rounded-full mt-1.5 flex-shrink-0"></span>
+                            <span>마우스 휠 또는 컨트롤 버튼으로 조직도를 확대/축소할 수 있습니다.</span>
+                        </li>
+                        <li className="flex items-start space-x-3">
+                            <span className="w-2 h-2 bg-education-secondary rounded-full mt-1.5 flex-shrink-0"></span>
+                            <span>마우스로 드래그하여 조직도를 이동할 수 있습니다.</span>
+                        </li>
+                        <li className="flex items-start space-x-3">
+                            <span className="w-2 h-2 bg-education-primary rounded-full mt-1.5 flex-shrink-0"></span>
+                            <span>인쇄 또는 이미지로 다운로드할 수 있습니다.</span>
+                        </li>
+                        <li className="flex items-start space-x-3">
+                            <span className="w-2 h-2 bg-education-secondary rounded-full mt-1.5 flex-shrink-0"></span>
+                            <span>'링크 공유'로 다른 사람과 공유할 수 있습니다.</span>
+                        </li>
+                    </ul>
                 </CardContent>
             </Card>
 
