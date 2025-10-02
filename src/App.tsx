@@ -1,31 +1,41 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthPage } from "./components/AuthPage";
-import { StaffInputPage } from "./components/StaffInputPage";
-import { EmergencyNetworkPage } from "./components/EmergencyNetworkPage";
-import NotFound from "./pages/NotFound";
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { supabase } from './integrations/supabase/client'
+import './App.css'
+import { AuthPage } from './components/AuthPage'
+import { EmergencyNetworkPage } from './components/EmergencyNetworkPage'
+import { StaffInputPage } from './components/StaffInputPage'
+import { useToast } from './hooks/use-toast'
 
-const queryClient = new QueryClient();
+function App() {
+  const { toast } = useToast()
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<AuthPage />} />
-          <Route path="/staff-input" element={<StaffInputPage />} />
-          <Route path="/emergency-network" element={<EmergencyNetworkPage />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        toast({ 
+          title: '비밀번호 변경', 
+          description: '새로운 비밀번호를 설정해주세요.' 
+        })
+      }
+    });
+  
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [toast]);
 
-export default App;
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<AuthPage />} />
+        <Route path="/update-password" element={<AuthPage />} />
+        <Route path="/staff-input" element={<StaffInputPage />} />
+        <Route path="/emergency-network" element={<EmergencyNetworkPage />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Router>
+  )
+}
+
+export default App

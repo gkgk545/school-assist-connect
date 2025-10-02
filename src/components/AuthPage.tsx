@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -18,20 +19,41 @@ export const AuthPage = () => {
   const [signUpSchoolName, setSignUpSchoolName] = useState('')
   const [signUpPassword, setSignUpPassword] = useState('')
 
+  const [resetDialogOpen, setResetDialogOpen] = useState(false)
+  const [resetSchoolId, setResetSchoolId] = useState('')
+
   const [loading, setLoading] = useState(false)
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   
   const { toast } = useToast()
   const navigate = useNavigate()
 
   useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true);
+        if (session) {
+          // 세션이 있으면 여기에서 추가 작업 가능
+        }
+      } else {
+        setIsPasswordRecovery(false);
+      }
+    });
+
     const checkUser = async () => {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
+        if (session && !isPasswordRecovery) {
             navigate('/staff-input');
         }
     };
     checkUser();
-  }, [navigate]);
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate, isPasswordRecovery]);
   
 
   const createEmailFromSchoolId = (id: string) => {
@@ -39,6 +61,62 @@ export const AuthPage = () => {
     const sanitizedId = id.trim().replace(/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣-]/g, '').toLowerCase();
     return `${sanitizedId}@school.app`;
   }
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast({ title: '오류', description: '비밀번호가 일치하지 않습니다.', variant: 'destructive' });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({ title: '오류', description: '비밀번호는 6자리 이상이어야 합니다.', variant: 'destructive' });
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+      toast({ title: '오류', description: '비밀번호 업데이트에 실패했습니다.', variant: 'destructive' });
+    } else {
+      toast({ title: '성공', description: '비밀번호가 성공적으로 변경되었습니다. 다시 로그인해주세요.' });
+      setIsPasswordRecovery(false);
+      navigate('/');
+    }
+    setLoading(false);
+  };
+
+  const handlePasswordReset = async () => {
+    if (!resetSchoolId) {
+      toast({
+        title: '오류',
+        description: '학교 ID를 입력해주세요.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setLoading(true);
+    const email = createEmailFromSchoolId(resetSchoolId);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/`
+    });
+
+    if (error) {
+      toast({
+        title: '오류',
+        description: '비밀번호 재설정 메일 전송에 실패했습니다. 학교 ID를 확인해주세요.',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: '성공',
+        description: `비밀번호 재설정 메일이 ${email} 주소로 전송되었습니다. 5분 이상 메일이 오지 않으면 스팸함을 확인해주세요.`,
+      });
+      setResetDialogOpen(false);
+    }
+    setLoading(false);
+    setResetSchoolId('');
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -126,10 +204,47 @@ export const AuthPage = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-education-light p-4">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login">로그인</TabsTrigger>
-          <TabsTrigger value="signup">회원가입</TabsTrigger>
+      {isPasswordRecovery ? (
+        <Card className="w-[400px]">
+          <CardHeader>
+            <CardTitle>새 비밀번호 설정</CardTitle>
+            <CardDescription>새로운 비밀번호를 입력해주세요. 6자리 이상이어야 합니다.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleUpdatePassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">새 비밀번호</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">비밀번호 확인</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90" disabled={loading}>
+                {loading ? '변경 중...' : '비밀번호 변경'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="login">로그인</TabsTrigger>
+            <TabsTrigger value="signup">회원가입</T>
         </TabsList>
         <TabsContent value="login">
           <form onSubmit={handleLogin}>
@@ -165,9 +280,43 @@ export const AuthPage = () => {
                 <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90" disabled={loading}>
                   {loading ? '로그인 중...' : '로그인'}
                 </Button>
+                <div className="text-center text-sm">
+                  <button 
+                    type="button" 
+                    onClick={() => setResetDialogOpen(true)} 
+                    className="text-blue-600 hover:underline"
+                  >
+                    비밀번호를 잊으셨나요?
+                  </button>
+                </div>
               </CardContent>
             </Card>
           </form>
+          <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>비밀번호 재설정</DialogTitle>
+                <DialogDescription>
+                  가입 시 사용한 학교 ID를 입력하시면, 비밀번호 재설정 안내 메일이 발송됩니다.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Label htmlFor="reset-school-id">학교 ID</Label>
+                <Input
+                  id="reset-school-id"
+                  value={resetSchoolId}
+                  onChange={(e) => setResetSchoolId(e.target.value)}
+                  placeholder="예: hangbok-cho"
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setResetDialogOpen(false)}>취소</Button>
+                <Button onClick={handlePasswordReset} disabled={loading}>
+                  {loading ? '전송 중...' : '재설정 메일 전송'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
         <TabsContent value="signup">
           <form onSubmit={handleSignUp}>
