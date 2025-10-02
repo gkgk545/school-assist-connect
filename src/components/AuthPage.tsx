@@ -10,16 +10,18 @@ import { useNavigate } from 'react-router-dom'
 
 export const AuthPage = () => {
   const [activeTab, setActiveTab] = useState('login');
-  
+
   const [loginSchoolId, setLoginSchoolId] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
-  
+
   const [signUpSchoolId, setSignUpSchoolId] = useState('')
   const [signUpSchoolName, setSignUpSchoolName] = useState('')
   const [signUpPassword, setSignUpPassword] = useState('')
+  
+  const [resetSchoolId, setResetSchoolId] = useState('');
 
   const [loading, setLoading] = useState(false)
-  
+
   const { toast } = useToast()
   const navigate = useNavigate()
 
@@ -32,7 +34,7 @@ export const AuthPage = () => {
     };
     checkUser();
   }, [navigate]);
-  
+
 
   const createEmailFromSchoolId = (id: string) => {
     // 공백, 특수문자를 제거하고 소문자로 변환
@@ -43,7 +45,7 @@ export const AuthPage = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    
+
     const email = createEmailFromSchoolId(loginSchoolId);
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -124,12 +126,46 @@ export const AuthPage = () => {
     setLoading(false)
   }
 
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetSchoolId) {
+      toast({
+        title: '입력 오류',
+        description: '학교 ID를 입력해주세요.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+    const email = createEmailFromSchoolId(resetSchoolId);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      toast({
+        title: '오류',
+        description: '비밀번호 재설정 링크를 보내는 중 오류가 발생했습니다. 학교 ID를 확인해주세요.',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: '성공',
+        description: `가입하신 이메일(${email})로 비밀번호 재설정 링크를 보냈습니다.`,
+      });
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-education-light p-4">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="login">로그인</TabsTrigger>
           <TabsTrigger value="signup">회원가입</TabsTrigger>
+          <TabsTrigger value="reset">ID/PW 찾기</TabsTrigger>
         </TabsList>
         <TabsContent value="login">
           <form onSubmit={handleLogin}>
@@ -143,21 +179,21 @@ export const AuthPage = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="school-id-login">학교 ID</Label>
-                  <Input 
-                    id="school-id-login" 
-                    type="text" 
-                    placeholder="예: hangbok-cho" 
-                    required 
+                  <Input
+                    id="school-id-login"
+                    type="text"
+                    placeholder="예: hangbok-cho"
+                    required
                     value={loginSchoolId}
                     onChange={(e) => setLoginSchoolId(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password-login">비밀번호</Label>
-                  <Input 
-                    id="password-login" 
-                    type="password" 
-                    required 
+                  <Input
+                    id="password-login"
+                    type="password"
+                    required
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                   />
@@ -181,32 +217,32 @@ export const AuthPage = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="school-id-signup">학교 ID (로그인 시 사용)</Label>
-                  <Input 
-                    id="school-id-signup" 
-                    type="text" 
-                    placeholder="한글, 영문, 숫자, 하이픈(-)만 가능" 
-                    required 
+                  <Input
+                    id="school-id-signup"
+                    type="text"
+                    placeholder="한글, 영문, 숫자, 하이픈(-)만 가능"
+                    required
                     value={signUpSchoolId}
                     onChange={(e) => setSignUpSchoolId(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="school-name-signup">학교명 (표시용)</Label>
-                  <Input 
-                    id="school-name-signup" 
-                    type="text" 
-                    placeholder="예: 행복초등학교" 
-                    required 
+                  <Input
+                    id="school-name-signup"
+                    type="text"
+                    placeholder="예: 행복초등학교"
+                    required
                     value={signUpSchoolName}
                     onChange={(e) => setSignUpSchoolName(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password-signup">비밀번호</Label>
-                  <Input 
-                    id="password-signup" 
-                    type="password" 
-                    required 
+                  <Input
+                    id="password-signup"
+                    type="password"
+                    required
                     value={signUpPassword}
                     onChange={(e) => setSignUpPassword(e.target.value)}
                     minLength={6}
@@ -215,6 +251,34 @@ export const AuthPage = () => {
                 </div>
                 <Button type="submit" className="w-full bg-gradient-secondary hover:opacity-90" disabled={loading}>
                   {loading ? '가입 중...' : '회원가입'}
+                </Button>
+              </CardContent>
+            </Card>
+          </form>
+        </TabsContent>
+        <TabsContent value="reset">
+          <form onSubmit={handlePasswordReset}>
+            <Card>
+              <CardHeader>
+                <CardTitle>아이디/비밀번호 찾기</CardTitle>
+                <CardDescription>
+                  학교 ID를 입력하시면 가입 시 생성된 이메일 주소로 비밀번호 재설정 링크가 전송됩니다. 아이디는 이메일 주소의 아이디 부분입니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="school-id-reset">학교 ID</Label>
+                  <Input
+                    id="school-id-reset"
+                    type="text"
+                    placeholder="가입 시 사용한 학교 ID"
+                    required
+                    value={resetSchoolId}
+                    onChange={(e) => setResetSchoolId(e.target.value)}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? '전송 중...' : '재설정 링크 받기'}
                 </Button>
               </CardContent>
             </Card>
