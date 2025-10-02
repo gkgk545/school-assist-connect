@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -18,71 +17,30 @@ export const AuthPage = () => {
   const [signUpSchoolId, setSignUpSchoolId] = useState('')
   const [signUpSchoolName, setSignUpSchoolName] = useState('')
   const [signUpPassword, setSignUpPassword] = useState('')
-
-  const [resetDialogOpen, setResetDialogOpen] = useState(false)
-  const [resetSchoolId, setResetSchoolId] = useState('')
+  
+  const [resetSchoolId, setResetSchoolId] = useState('');
 
   const [loading, setLoading] = useState(false)
-  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
+
   const { toast } = useToast()
   const navigate = useNavigate()
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsPasswordRecovery(true);
-        if (session) {
-          // 세션이 있으면 여기에서 추가 작업 가능
-        }
-      } else {
-        setIsPasswordRecovery(false);
-      }
-    });
-
     const checkUser = async () => {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session && !isPasswordRecovery) {
+        if (session) {
             navigate('/staff-input');
         }
     };
     checkUser();
+  }, [navigate]);
 
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, [navigate, isPasswordRecovery]);
 
   const createEmailFromSchoolId = (id: string) => {
     // 공백, 특수문자를 제거하고 소문자로 변환
     const sanitizedId = id.trim().replace(/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣-]/g, '').toLowerCase();
     return `${sanitizedId}@school.app`;
   }
-
-  const handleUpdatePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      toast({ title: '오류', description: '비밀번호가 일치하지 않습니다.', variant: 'destructive' });
-      return;
-    }
-    if (newPassword.length < 6) {
-      toast({ title: '오류', description: '비밀번호는 6자리 이상이어야 합니다.', variant: 'destructive' });
-      return;
-    }
-
-    setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-
-    if (error) {
-      toast({ title: '오류', description: '비밀번호 업데이트에 실패했습니다.', variant: 'destructive' });
-    } else {
-      toast({ title: '성공', description: '비밀번호가 성공적으로 변경되었습니다. 다시 로그인해주세요.' });
-      setIsPasswordRecovery(false);
-      navigate('/');
-    }
-    setLoading(false);
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -203,54 +161,12 @@ export const AuthPage = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-education-light p-4">
-      {isPasswordRecovery ? (
-        <Card className="w-[400px]">
-          <CardHeader>
-            <CardTitle>새 비밀번호 설정</CardTitle>
-            <CardDescription>새로운 비밀번호를 입력해주세요. 6자리 이상이어야 합니다.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUpdatePassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="new-password">새 비밀번호</Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  minLength={6}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">비밀번호 확인</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  minLength={6}
-                />
-              </div>
-              <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90" disabled={loading}>
-                {loading ? '변경 중...' : '비밀번호 변경'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      ) : (
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="login">로그인</TabsTrigger>
           <TabsTrigger value="signup">회원가입</TabsTrigger>
           <TabsTrigger value="reset">ID/PW 찾기</TabsTrigger>
         </TabsList>
-      </Tabs>
-      )}
-    </div>
-  )
-}
         <TabsContent value="login">
           <form onSubmit={handleLogin}>
             <Card>
